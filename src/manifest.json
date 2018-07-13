@@ -34,6 +34,14 @@
         "script": "./privileged/testingOverrides/api.js",
         "paths": [["testingOverrides"]]
       }
+    },
+    "autoplay": {
+      "schema": "./privileged/autoplay/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "./privileged/autoplay/api.js",
+        "paths": [["autoplay"]]
+      }
     }
   },
   "permissions": ["management", "storage", "alarms"],
