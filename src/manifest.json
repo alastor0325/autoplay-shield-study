@@ -37,6 +37,12 @@
     }
   },
   "permissions": ["management", "storage", "alarms"],
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://*/*"],
+      "js": ["blockedAutoplayDetector.js"]
+    }
+  ],
   "background": {
     "scripts": ["studySetup.js", "feature.js", "background.js"]
   },
