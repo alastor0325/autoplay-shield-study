@@ -27,43 +27,44 @@ class Feature {
   configure(studyInfo) {
     const feature = this;
     const { variation, isFirstRun } = studyInfo;
+    console.log("#### configure feature");
+    console.log(studyInfo);
 
-    // Initiate our browser action
-    new BrowserActionButtonChoiceFeature(variation);
+    new autoplayShieldStudyFeature();
 
-    // perform something only during first run
-    if (isFirstRun) {
-      browser.introductionNotificationBar.onIntroductionShown.addListener(
-        () => {
-          console.log("onIntroductionShown");
+    // // perform something only during first run
+    // if (isFirstRun) {
+    //   browser.introductionNotificationBar.onIntroductionShown.addListener(
+    //     () => {
+    //       console.log("onIntroductionShown");
 
-          feature.sendTelemetry({
-            event: "onIntroductionShown",
-          });
-        },
-      );
+    //       feature.sendTelemetry({
+    //         event: "onIntroductionShown",
+    //       });
+    //     },
+    //   );
 
-      browser.introductionNotificationBar.onIntroductionAccept.addListener(
-        () => {
-          console.log("onIntroductionAccept");
-          feature.sendTelemetry({
-            event: "onIntroductionAccept",
-          });
-        },
-      );
+    //   browser.introductionNotificationBar.onIntroductionAccept.addListener(
+    //     () => {
+    //       console.log("onIntroductionAccept");
+    //       feature.sendTelemetry({
+    //         event: "onIntroductionAccept",
+    //       });
+    //     },
+    //   );
 
-      browser.introductionNotificationBar.onIntroductionLeaveStudy.addListener(
-        () => {
-          console.log("onIntroductionLeaveStudy");
-          feature.sendTelemetry({
-            event: "onIntroductionLeaveStudy",
-          });
-          browser.study.endStudy("introduction-leave-study");
-        },
-      );
+    //   browser.introductionNotificationBar.onIntroductionLeaveStudy.addListener(
+    //     () => {
+    //       console.log("onIntroductionLeaveStudy");
+    //       feature.sendTelemetry({
+    //         event: "onIntroductionLeaveStudy",
+    //       });
+    //       browser.study.endStudy("introduction-leave-study");
+    //     },
+    //   );
 
-      browser.introductionNotificationBar.show(variation.name);
-    }
+    //   browser.introductionNotificationBar.show(variation.name);
+    // }
   }
 
   /* good practice to have the literal 'sending' be wrapped up */
@@ -87,60 +88,68 @@ class Feature {
   }
 }
 
-class BrowserActionButtonChoiceFeature {
-  /**
-   * - set image, text, click handler (telemetry)
-   */
-  constructor(variation) {
-    console.log(
-      "Initializing BrowserActionButtonChoiceFeature:",
-      variation.name,
+class autoplayShieldStudyFeature {
+  constructor() {
+    console.log("#### ctor of autoplayShieldStudyFeature");
+
+    browser.tabs.onUpdated.addListener(
+      (tabId, changeInfo, tabInfo) =>
+        this.handleUpdated(tabId, changeInfo, tabInfo)
     );
-    this.timesClickedInSession = 0;
+    this.domainSet = new Set();
+    // browser.tabs.onUpdated.addListener(this.handleUpdated);
+  };
 
-    // modify BrowserAction (button) ui for this particular {variation}
-    console.log("path:", `icons/${variation.name}.svg`);
-    // TODO: Running into an error "values is undefined" here
-    browser.browserAction.setIcon({ path: Feature.iconPath(variation) });
-    browser.browserAction.setTitle({ title: variation.name });
-    browser.browserAction.onClicked.addListener(() => this.handleButtonClick());
-    console.log("initialized");
-  }
+  isSupportURLProtocol(url) {
+    return !!(url.match(/^(http(s?):\/\/)/im));
+  };
 
-  /** handleButtonClick
-   *
-   * - instrument browserAction button clicks
-   * - change label
-   */
-  handleButtonClick() {
-    console.log("handleButtonClick");
-    // note: doesn't persist across a session, unless you use localStorage or similar.
-    this.timesClickedInSession += 1;
-    console.log("got a click", this.timesClickedInSession);
-    browser.browserAction.setBadgeText({
-      text: this.timesClickedInSession.toString(),
-    });
+  getBaseDomain(url) {
+    return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
+  };
 
-    // telemetry: FIRST CLICK
-    if (this.timesClickedInSession === 1) {
-      browser.study.sendTelemetry({ event: "button-first-click-in-session" });
+  handleUpdated(tabId, changeInfo, tabInfo) {
+    if (!changeInfo.url) {
+      return;
     }
 
-    // telemetry EVERY CLICK
-    browser.study.sendTelemetry({
-      event: "button-click",
-      timesClickedInSession: "" + this.timesClickedInSession,
-    });
+    let url = changeInfo.url;
+    Logger.log(`TabId: ${tabId}, URL changed to ${url}`);
 
-    // webExtension-initiated ending for "used-often"
-    //
-    // - 3 timesClickedInSession in a session ends the study.
-    // - see `../Config.jsm` for what happens during this ending.
-    if (this.timesClickedInSession >= 3) {
-      browser.study.endStudy("used-often");
+    if (!this.isSupportURLProtocol(url)) {
+      return;
     }
-  }
+
+    let domain = this.getBaseDomain(url);
+    Logger.log(`Domain = ${domain}`);
+    Logger.log(`HashCode = ${domain.hashCode()}`);
+    this.domainSet.add(domain.hashCode());
+
+    for (let item of this.domainSet) {
+      Logger.log(item);
+    }
+  };
 }
+
+var Logger = {
+  openLog : true,
+  log : function log(msg) {
+    if (!!this.openLog) {
+      console.log(msg);
+    }
+  }
+};
+
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
 
 // make an instance of the feature class available to background.js
 // construct only. will be configured after setup

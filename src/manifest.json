@@ -44,7 +44,7 @@
       }
     }
   },
-  "permissions": ["management", "storage", "alarms"],
+  "permissions": ["management", "storage", "alarms", "tabs"],
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
