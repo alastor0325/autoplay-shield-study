@@ -9,7 +9,32 @@
         "description": "Description of my property here."
       }
     },
+    "types": [
+      {
+        "id": "telemetryPayload",
+        "$schema": "http://json-schema.org/draft-04/schema",
+        "type": "object",
+        "additionalProperties": true,
+        "testcase": {
+          "foo": "bar"
+        }
+      }
+    ],
     "functions": [
+      {
+        "name": "sendTelemetry",
+        "type": "function",
+        "description": "Send Telemetry",
+        "async": true,
+        "parameters": [
+          {
+            "name": "payload",
+            "$ref": "telemetryPayload"
+          }
+        ],
+        "defaultReturn": "undefined",
+        "returns": null
+      },
       {
         "name": "autoplayTest",
         "type": "function",

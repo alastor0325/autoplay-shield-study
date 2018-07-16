@@ -46,9 +46,11 @@ class TabsMonitor {
 class TelemetrySender {
   constructor() {}
 
-  /* good practice to have the literal 'sending' be wrapped up */
-  sendTelemetry(stringStringMap) {
-    browser.study.sendTelemetry(stringStringMap);
+  sendTelemetry(payload) {
+    // browser.study.sendTelemetry(payload);
+
+    // Add validation for JSON
+    browser.autoplay.sendTelemetry(payload)
   }
 };
 
@@ -57,6 +59,41 @@ class ShieldStudyPing {
     this.domainUserVisited = new Set();
     this.domainWithAutoplay = new Set();
     this.blockedMediaCount = 0;
+    this.telemetry = new TelemetrySender();
+  }
+
+  async sendPing() {
+    // Test sending ping
+    let payload = this.constructPayload("counts");
+    await this.telemetry.sendTelemetry(payload);
+    Logger.log("### added custom ping");
+  }
+
+  constructPayload(type) {
+    let payload = {
+      id : GenerateUUID(),
+      type : type
+    };
+    switch (type) {
+      case "counts":
+          payload.counters = {
+            totalPages : this.domainUserVisited.size,
+            totalPagesAM : this.domainWithAutoplay.size,
+            totalBlockedVideos : this.blockedMediaCount
+          }
+          // payload.totalPages = this.domainUserVisited.size.toString();
+          // payload.totalPagesAM = this.domainWithAutoplay.size.toString();
+          // payload.totalBlockedVideos = this.blockedMediaCount.toString();
+        break;
+      case "prompt":
+        break;
+      case "settings":
+        break;
+      default:
+        console.log("Error : incorrect payload type");
+        break;
+    }
+    return payload;
   }
 
   addDomainHashCode(type, hashCode) {
@@ -72,7 +109,10 @@ class ShieldStudyPing {
         console.log("Error : incorrect data type");
         break;
     }
+
+    // For test
     this.showAllDomainHaseCode();
+    this.sendPing();
   }
 
   showAllDomainHaseCode() {
@@ -89,7 +129,6 @@ class Feature {
   constructor() {
     Logger.log("#### ctor of Feature");
     this.ping = new ShieldStudyPing();
-    this.telemetry = new TelemetrySender();
     new TabsMonitor(this);
   }
 
@@ -129,6 +168,11 @@ var Logger = {
     }
   }
 };
+
+function GenerateUUID() {
+  return  Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+}
 
 String.prototype.hashCode = function() {
   var hash = 0, i, chr;
