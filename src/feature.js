@@ -13,6 +13,13 @@ class TabsMonitor {
   constructor(feature) {
     Logger.log("#### ctor of TabsMonitor");
     this.feature = feature;
+    // this.autoplayListener = (url) => {
+    //   console.log(`Page ${url} has autoplay media`);
+    //   let domain = this.getBaseDomainHash(url);
+    //   this.feature.update("autoplayOccur", domain);
+    //   browser.autoplay.autoplayChanged.removeListener(this.autoplayListener);
+    // };
+
     browser.tabs.onUpdated.addListener(this.handleUpdated.bind(this));
   }
 
@@ -24,22 +31,41 @@ class TabsMonitor {
     return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
   }
 
-  handleUpdated(tabId, changeInfo, tabInfo) {
+  getBaseDomainHash(url) {
+    let baseDomain = this.getBaseDomain(url);
+    Logger.log(`Domain = ${baseDomain}`);
+
+    let hash = 0, i, chr;
+    if (baseDomain.length === 0) return hash;
+    for (i = 0; i < baseDomain.length; i++) {
+      chr   = baseDomain.charCodeAt(i);
+      hash  = ((hash << 5) - hash) + chr;
+      hash |= 0; // Convert to 32bit integer
+    }
+    Logger.log(`HashCode = ${hash}`);
+    return hash;
+  }
+
+  async handleUpdated(tabId, changeInfo, tabInfo) {
     if (!changeInfo.url) {
       return;
     }
 
     let url = changeInfo.url;
-    Logger.log(`TabId: ${tabId}, URL changed to ${url}`);
-
+    Logger.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
     if (!this.isSupportURLProtocol(url)) {
       return;
     }
 
-    let domain = this.getBaseDomain(url);
-    Logger.log(`Domain = ${domain}`);
-    Logger.log(`HashCode = ${domain.hashCode()}`);
-    this.feature.update("visitPage", domain.hashCode());
+    let domain = this.getBaseDomainHash(url);
+    this.feature.update("visitPage", domain);
+
+    browser.autoplay.hasAudibleAutoplayMediaContent(tabId).then((url) => {
+      this.feature.update("autoplayOccur", this.getBaseDomainHash(url));
+    }).catch((error) => {
+      console.log("### get error=" + error);
+    });
+
   }
 }
 
@@ -48,7 +74,6 @@ class TelemetrySender {
 
   sendTelemetry(payload) {
     // browser.study.sendTelemetry(payload);
-
     // Add validation for JSON
     browser.autoplay.sendTelemetry(payload)
   }
@@ -63,10 +88,9 @@ class ShieldStudyPing {
   }
 
   async sendPing() {
-    // Test sending ping
     let payload = this.constructPayload("counts");
     await this.telemetry.sendTelemetry(payload);
-    Logger.log("### added custom ping");
+    Logger.log(payload);
   }
 
   constructPayload(type) {
@@ -81,9 +105,6 @@ class ShieldStudyPing {
             totalPagesAM : this.domainWithAutoplay.size,
             totalBlockedVideos : this.blockedMediaCount
           }
-          // payload.totalPages = this.domainUserVisited.size.toString();
-          // payload.totalPagesAM = this.domainWithAutoplay.size.toString();
-          // payload.totalBlockedVideos = this.blockedMediaCount.toString();
         break;
       case "prompt":
         break;
@@ -96,8 +117,8 @@ class ShieldStudyPing {
     return payload;
   }
 
-  addDomainHashCode(type, hashCode) {
-    Logger.log(`add ${hashCode} to ping`);
+  updatePingData(type, hashCode) {
+    Logger.log(`type : ${type}, add ${hashCode} to ping`);
     switch (type) {
       case "visitPage":
         this.domainUserVisited.add(hashCode);
@@ -127,30 +148,18 @@ class ShieldStudyPing {
 
 class Feature {
   constructor() {
-    Logger.log("#### ctor of Feature");
     this.ping = new ShieldStudyPing();
-    new TabsMonitor(this);
+    this.tabsMonitor = new TabsMonitor(this);
   }
 
   configure(studyInfo) {
     const feature = this;
     const { variation, isFirstRun } = studyInfo;
-    console.log("#### configure feature");
     console.log(studyInfo);
   }
 
   update(type, data) {
-    switch (type) {
-      case "visitPage":
-        this.ping.addDomainHashCode(type, data);
-        break;
-      case "autoplayOccur":
-        Logger.log("### autoplayOccur");
-        break;
-      default:
-        console.log("Error : incorrect operation type");
-        break;
-    }
+    this.ping.updatePingData(type, data);
   }
 
   /**
@@ -173,17 +182,6 @@ function GenerateUUID() {
   return  Math.random().toString(36).substring(2, 15) +
           Math.random().toString(36).substring(2, 15);
 }
-
-String.prototype.hashCode = function() {
-  var hash = 0, i, chr;
-  if (this.length === 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    chr   = this.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-};
 
 // make an instance of the feature class available to background.js
 // construct only. will be configured after setup
