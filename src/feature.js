@@ -1,25 +1,8 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "(feature)" }]*/
 
-/**  Example Feature module for a Shield Study.
- *
- *  Demonstrates `studyUtils` API:
- *
- *  - `telemetry` to instrument "shown", "accept", and "leave-study" events.
- *  - `endStudy` to send a custom study ending.
- *
- **/
-
 class TabsMonitor {
   constructor(feature) {
-    Logger.log("#### ctor of TabsMonitor");
     this.feature = feature;
-    // this.autoplayListener = (url) => {
-    //   console.log(`Page ${url} has autoplay media`);
-    //   let domain = this.getBaseDomainHash(url);
-    //   this.feature.update("autoplayOccur", domain);
-    //   browser.autoplay.autoplayChanged.removeListener(this.autoplayListener);
-    // };
-
     browser.tabs.onUpdated.addListener(this.handleUpdated.bind(this));
   }
 
@@ -63,7 +46,7 @@ class TabsMonitor {
     browser.autoplay.hasAudibleAutoplayMediaContent(tabId).then((url) => {
       this.feature.update("autoplayOccur", this.getBaseDomainHash(url));
     }).catch((error) => {
-      console.log("### get error=" + error);
+      Logger.log("### get error=" + error);
     });
 
   }
@@ -156,6 +139,7 @@ class Feature {
     const feature = this;
     const { variation, isFirstRun } = studyInfo;
     console.log(studyInfo);
+    browser.autoplay.setPreferences();
   }
 
   update(type, data) {

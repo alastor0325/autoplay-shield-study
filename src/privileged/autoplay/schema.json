@@ -54,11 +54,18 @@
       }
     ],
     "functions": [
-       {
+      {
+        "name": "setPreferences",
+        "type": "function",
+        "async": false,
+        "description": "setup testing preferences",
+        "parameters": []
+      },
+      {
         "name": "hasAudibleAutoplayMediaContent",
         "type": "function",
         "async": true,
-        "description": "test",
+        "description": "check whether the tab contains autoplay media",
         "parameters": [
           {
             "name": "tabId",
@@ -70,7 +77,7 @@
       {
         "name": "sendTelemetry",
         "type": "function",
-        "description": "Send Telemetry",
+        "description": "send Telemetry ping",
         "async": true,
         "parameters": [
           {

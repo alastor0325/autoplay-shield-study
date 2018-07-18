@@ -7,20 +7,11 @@ const { TelemetryController } = ChromeUtils.import(
 )
 
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-const EventManager = ExtensionCommon.EventManager;
+const { EventManager } = ExtensionCommon;
 
-// console.log("@@@@@@");
-// console.log(this);
-// console.log(window);
-// console.log("@@@@@@");
+ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
 
-// ChromeUtils.defineModuleGetter(this, "ExtensionParent",
-//                                "resource://gre/modules/ExtensionParent.jsm");
-// XPCOMUtils.defineLazyGetter(this, "tabTracker", () => {
-//   return ExtensionParent.apiManager.global.tabTracker;
-// });
-
-var autoplay = class extends ExtensionAPI {
+var autoplay = class AutoplayAPI extends ExtensionAPI {
   getAPI(context) {
     const {extension} = context;
     const {tabManager} = extension;
@@ -52,6 +43,14 @@ var autoplay = class extends ExtensionAPI {
             console.log("@@@@ remove autoplayChanged listener");
           };
         }).api(),
+
+        setPreferences: function setPreferences() {
+          Preferences.set({
+            "media.autoplay.enabled" : false,
+            "media.autoplay.enabled.user-gestures-needed" : true,
+            "media.autoplay.ask-permission" : true
+          });
+        },
 
         hasAudibleAutoplayMediaContent: async function (tabId) {
           console.log("@@@@ hasAudibleAutoplayMediaContent");
