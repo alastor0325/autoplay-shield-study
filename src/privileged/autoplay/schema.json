@@ -20,7 +20,53 @@
         }
       }
     ],
+    "events": [
+      {
+        "name": "onSomething",
+        "type": "function",
+        "description": "Description of the event",
+        "parameters": [
+          {
+            "name": "param1",
+            "description": "Description of the first callback parameter",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "name": "autoplayChanged",
+        "type": "function",
+        "description": "...TODO...",
+        "parameters": [
+          {
+            "name": "url",
+            "description": "the url with autoplay media",
+            "type": "string"
+          }
+        ],
+        "extraParameters": [
+          {
+            "name": "tabId",
+            "description": "The tab id of the tab which we want to monitor for autoplay chagned",
+            "type": "number"
+          }
+        ]
+      }
+    ],
     "functions": [
+       {
+        "name": "hasAudibleAutoplayMediaContent",
+        "type": "function",
+        "async": true,
+        "description": "test",
+        "parameters": [
+          {
+            "name": "tabId",
+            "type": "number",
+            "description": "tab id"
+          }
+        ]
+      },
       {
         "name": "sendTelemetry",
         "type": "function",
@@ -34,31 +80,6 @@
         ],
         "defaultReturn": "undefined",
         "returns": null
-      },
-      {
-        "name": "autoplayTest",
-        "type": "function",
-        "async": true,
-        "description": "test",
-        "parameters": []
-      },
-      {
-        "name": "add",
-        "type": "function",
-        "description": "Adds two numbers together.",
-        "async": true,
-        "parameters": [
-          {
-            "name": "x",
-            "type": "number",
-            "description": "The first number to add."
-          },
-          {
-            "name": "y",
-            "type": "number",
-            "description": "The second number to add."
-          }
-        ]
       }
     ]
   }

@@ -41,7 +41,7 @@ var autoplay = class extends ExtensionAPI {
           };
 
           function autoplayListener(event) {
-            if (event.detail.changed.includes("muted")) {
+            if (event.detail.changed.includes("contain-autoplay-media")) {
               callback(event.target.linkedBrowser.currentURI.spec.toString());
             }
           }
@@ -58,8 +58,8 @@ var autoplay = class extends ExtensionAPI {
           let rv = await new Promise(function(resolve, reject) {
             let tab = tabManager.get(tabId);
             tab.nativeTab.addEventListener("TabAttrModified", (event) => {
-              // TODO : "muted" is used for testing
-              if (event.detail.changed.includes("muted")) {
+              console.log(event.detail.changed);
+              if (event.detail.changed.includes("contain-autoplay-media")) {
                 resolve(event.target.linkedBrowser.currentURI.spec.toString());
               }
             });
