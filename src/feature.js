@@ -15,11 +15,14 @@ class TabsMonitor {
   }
 
   getBaseDomainHash(url) {
+    // TODO : salted-hash
     let baseDomain = this.getBaseDomain(url);
     Logger.log(`Domain = ${baseDomain}`);
 
     let hash = 0, i, chr;
-    if (baseDomain.length === 0) return hash;
+    if (baseDomain.length === 0) {
+      return hash
+    };
     for (i = 0; i < baseDomain.length; i++) {
       chr   = baseDomain.charCodeAt(i);
       hash  = ((hash << 5) - hash) + chr;
@@ -29,7 +32,25 @@ class TabsMonitor {
     return hash;
   }
 
-  async handleUpdated(tabId, changeInfo, tabInfo) {
+  async checkTabAutoplayStatus(tabId) {
+    let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
+    if (!this.isSupportURLProtocol(url)) {
+      return;
+    }
+
+    let hashURL = this.getBaseDomainHash(url);
+    this.feature.update("autoplayOccur", hashURL);
+
+    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
+    this.feature.update("promptChanged", {
+      pageId : hashURL,
+      timestamp : Date.now(),
+      rememberCheckbox : permission.rememberCheckbox,
+      allowAutoPlay : permission.allowAutoPlay,
+    });
+  }
+
+  handleUpdated(tabId, changeInfo, tabInfo) {
     if (!changeInfo.url) {
       return;
     }
@@ -42,13 +63,7 @@ class TabsMonitor {
 
     let domain = this.getBaseDomainHash(url);
     this.feature.update("visitPage", domain);
-
-    browser.autoplay.hasAudibleAutoplayMediaContent(tabId).then((url) => {
-      this.feature.update("autoplayOccur", this.getBaseDomainHash(url));
-    }).catch((error) => {
-      Logger.log("### get error=" + error);
-    });
-
+    this.checkTabAutoplayStatus(tabId)
   }
 }
 
@@ -67,18 +82,50 @@ class ShieldStudyPing {
     this.domainUserVisited = new Set();
     this.domainWithAutoplay = new Set();
     this.blockedMediaCount = 0;
+    this.promptResponses = [];
     this.telemetry = new TelemetrySender();
   }
 
-  async sendPing() {
-    let payload = this.constructPayload("counts");
-    await this.telemetry.sendTelemetry(payload);
-    Logger.log(payload);
+  updatePingData(type, data) {
+    Logger.log(`type : ${type}`);
+    Logger.log(data);
+    switch (type) {
+      case "visitPage":
+        this.domainUserVisited.add(data);
+        break;
+      case "autoplayOccur":
+        this.domainWithAutoplay.add(data);
+        break;
+      case "promptChanged":
+        this.promptResponses.push(data);
+        break;
+      default:
+        console.log("Error : incorrect data type");
+        break;
+    }
+
+    // For test
+    if (this.domainUserVisited.size >= 3) {
+      this._showAllDomainHaseCode();
+      this._sendPing();
+    }
   }
 
-  constructPayload(type) {
+  async _sendPing() {
+    console.log("@@@@@ send ping");
+    let payload = this._constructPayload("counts");
+    await this.telemetry.sendTelemetry(payload);
+
+    while (this.promptResponses.length > 0) {
+      payload = this._constructPayload("prompt");
+      await this.telemetry.sendTelemetry(payload);
+    }
+  }
+
+  // Utilities functions
+  _constructPayload(type) {
     let payload = {
-      id : GenerateUUID(),
+      id : this._generateUUID(),
       type : type
     };
     switch (type) {
@@ -90,6 +137,7 @@ class ShieldStudyPing {
           }
         break;
       case "prompt":
+          payload.promptResponse = this.promptResponses.shift();
         break;
       case "settings":
         break;
@@ -97,35 +145,22 @@ class ShieldStudyPing {
         console.log("Error : incorrect payload type");
         break;
     }
+    Logger.log(payload);
     return payload;
   }
 
-  updatePingData(type, hashCode) {
-    Logger.log(`type : ${type}, add ${hashCode} to ping`);
-    switch (type) {
-      case "visitPage":
-        this.domainUserVisited.add(hashCode);
-        break;
-      case "autoplayOccur":
-        this.domainWithAutoplay.add(hashCode);
-        break;
-      default:
-        console.log("Error : incorrect data type");
-        break;
-    }
-
-    // For test
-    this.showAllDomainHaseCode();
-    this.sendPing();
-  }
-
-  showAllDomainHaseCode() {
+  _showAllDomainHaseCode() {
     for (let item of this.domainUserVisited) {
       Logger.log(item);
     }
     for (let item of this.domainWithAutoplay) {
       Logger.log(item);
     }
+  }
+
+  _generateUUID() {
+    return  Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
   }
 }
 
@@ -161,11 +196,6 @@ var Logger = {
     }
   }
 };
-
-function GenerateUUID() {
-  return  Math.random().toString(36).substring(2, 15) +
-          Math.random().toString(36).substring(2, 15);
-}
 
 // make an instance of the feature class available to background.js
 // construct only. will be configured after setup

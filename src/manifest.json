@@ -5,7 +5,7 @@
   "manifest_version": 2,
   "applications": {
     "gecko": {
-      "id": "button-icon-preference@shield.mozilla.org",
+      "id": "autoplay-shield-study@shield.mozilla.org",
       "strict_min_version": "61.0a1"
     }
   },

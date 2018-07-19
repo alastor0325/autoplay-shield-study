@@ -62,7 +62,7 @@
         "parameters": []
       },
       {
-        "name": "hasAudibleAutoplayMediaContent",
+        "name": "hasAutoplayMediaContent",
         "type": "function",
         "async": true,
         "description": "check whether the tab contains autoplay media",
@@ -71,6 +71,24 @@
             "name": "tabId",
             "type": "number",
             "description": "tab id"
+          }
+        ]
+      },
+      {
+        "name": "getAutoplayPermission",
+        "type": "function",
+        "async": true,
+        "description": "...TODO",
+        "parameters": [
+          {
+            "name": "tabId",
+            "type": "number",
+            "description": "tab id"
+          },
+           {
+            "name": "url",
+            "type": "string",
+            "description": "autoplay url"
           }
         ]
       },
