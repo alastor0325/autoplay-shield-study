@@ -103,15 +103,9 @@ class ShieldStudyPing {
         console.log("Error : incorrect data type");
         break;
     }
-
-    // For test
-    if (this.domainUserVisited.size >= 3) {
-      this._showAllDomainHaseCode();
-      this._sendPing();
-    }
   }
 
-  async _sendPing() {
+  async sendPing() {
     console.log("@@@@@ send ping");
     let payload = this._constructPayload("counts");
     await this.telemetry.sendTelemetry(payload);
@@ -168,6 +162,11 @@ class Feature {
   constructor() {
     this.ping = new ShieldStudyPing();
     this.tabsMonitor = new TabsMonitor(this);
+
+    // for test
+    browser.browserAction.onClicked.addListener(() => {
+      this.ping.sendPing();
+    });
   }
 
   configure(studyInfo) {
