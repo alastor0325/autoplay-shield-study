@@ -9,7 +9,6 @@ ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
 const CID = ChromeUtils.import("resource://gre/modules/ClientID.jsm", {});
 const { EventManager } = ExtensionCommon;
 
-
 function _once(target, name) {
   var p = new Promise(function(resolve, reject) {
     target.addEventListener(name, function() {
@@ -26,29 +25,42 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
     return {
       autoplay : {
-        onSomething: new EventManager(context, "autoplay.onSomething", fire => {
-          const callback = value => {
-            fire.async(value);
-          };
-          callback("hello");
-          return () => {};
-        }).api(),
-
-        autoplayChanged: new EventManager(context, "autoplay.autoplayChanged", (fire, tabId) => {
+        autoplaySettingChanged: new EventManager(context, "autoplay.autoplaySettingChanged", fire => {
           const callback = value => {
             fire.async(value);
           };
 
-          function autoplayListener(event) {
-            if (event.detail.changed.includes("contain-autoplay-media")) {
-              callback(event.target.linkedBrowser.currentURI.spec.toString());
+          let observer = function observe(subject, topic, data) {
+            if (subject.type !== "autoplay-media" || topic !==  "perm-changed") {
+              return;
             }
-          }
 
-          let tab = tabManager.get(tabId);
-          tab.nativeTab.addEventListener("TabAttrModified", autoplayListener);
+            console.log(subject);
+            let domain = subject.principal.baseDomain;
+            let allowAutoplay;
+
+            const PERM_ACTION = {
+              UNKNOWN_ACTION : 0,
+              ALLOW_ACTION   : 1,
+              DENY_ACTION    : 2,
+              PROMPT_ACTION  : 3
+            }
+
+            if (data === "added") {
+              allowAutoplay = (subject.capability == PERM_ACTION.ALLOW_ACTION);
+            } else if (data === "deleted") {
+              allowAutoplay = PERM_ACTION.UNKNOWN_ACTION;
+            }
+            console.log(`@@@@ perm-changed, allowAutoplay=${allowAutoplay}, domain=${domain}`);
+            callback({
+              domain : domain,
+              allowAutoplay : allowAutoplay
+            });
+          };
+          Services.obs.addObserver(observer, "perm-changed");
+
           return () => {
-            console.log("@@@@ remove autoplayChanged listener");
+            Services.obs.removeObserver(observer, "perm-changed");
           };
         }).api(),
 

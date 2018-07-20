@@ -3,7 +3,99 @@
 class TabsMonitor {
   constructor(feature) {
     this.feature = feature;
+    this.settingTabIds = new Set();
+    this.privacyPageURL = "about:preferences#privacy";
+    this.settingListener = this.autoplaySettingChanged.bind(this);
+
     browser.tabs.onUpdated.addListener(this.handleUpdated.bind(this));
+    browser.tabs.onRemoved.addListener(this.handleRemoved.bind(this));
+  }
+
+  async checkTabAutoplayStatus(tabId) {
+    let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
+    if (!this.isSupportURLProtocol(url)) {
+      return;
+    }
+
+    let hashURL = this.getBaseDomainHash(url);
+    this.feature.update("autoplayOccur", hashURL);
+
+    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
+    this.feature.update("promptChanged", {
+      pageId : hashURL,
+      timestamp : Date.now(),
+      rememberCheckbox : permission.rememberCheckbox,
+      allowAutoPlay : permission.allowAutoPlay,
+    });
+  }
+
+  autoplaySettingChanged(rv) {
+    // TODO : global setting changed
+    this.feature.update("settingChanged", {
+      timestamp : Date.now(),
+      pageSpecific : {
+        pageid : this.getBaseDomainHash(rv.domain),
+        allowAutoPlay : rv.allowAutoplay
+      }
+    });
+  }
+
+  startWaitingForAutoplaySettingChanged() {
+    browser.autoplay.autoplaySettingChanged.addListener(this.settingListener);
+  }
+
+  stoptWaitingForAutoplaySettingChanged() {
+    browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
+  }
+
+  addSettingTabId(tabId) {
+    this.settingTabIds.add(tabId);
+    if (this.settingTabIds.size == 1) {
+      this.startWaitingForAutoplaySettingChanged();
+    }
+  }
+
+  removeSettingTabId(tabId) {
+    this.settingTabIds.delete(tabId);
+    if (this.settingTabIds.size == 0) {
+      this.stoptWaitingForAutoplaySettingChanged();
+    }
+  }
+
+  checkIfEneteringSettingPrivacyPage(tabId, url) {
+    if (url === this.privacyPageURL && !this.settingTabIds.has(tabId)) {
+      this.addSettingTabId(tabId);
+      return true;
+    } else if (this.settingTabIds.has(tabId) && url !== this.privacyPageURL) {
+      this.removeSettingTabId(tabId);
+    }
+    return false;
+  }
+
+  handleUpdated(tabId, changeInfo, tabInfo) {
+    if (!changeInfo.url) {
+      return;
+    }
+
+    let url = changeInfo.url;
+    Logger.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
+    if (this.checkIfEneteringSettingPrivacyPage(tabId, url)) {
+      return;
+    }
+
+    if (!this.isSupportURLProtocol(url)) {
+      return;
+    }
+
+    let domain = this.getBaseDomainHash(url);
+    this.feature.update("visitPage", domain);
+    this.checkTabAutoplayStatus(tabId)
+  }
+
+  handleRemoved(tabId, removeInfo) {
+    if (this.settingTabIds.has(tabId)) {
+      this.removeSettingTabId(tabId);
+    }
   }
 
   isSupportURLProtocol(url) {
@@ -31,40 +123,6 @@ class TabsMonitor {
     Logger.log(`HashCode = ${hash}`);
     return hash;
   }
-
-  async checkTabAutoplayStatus(tabId) {
-    let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
-    if (!this.isSupportURLProtocol(url)) {
-      return;
-    }
-
-    let hashURL = this.getBaseDomainHash(url);
-    this.feature.update("autoplayOccur", hashURL);
-
-    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
-    this.feature.update("promptChanged", {
-      pageId : hashURL,
-      timestamp : Date.now(),
-      rememberCheckbox : permission.rememberCheckbox,
-      allowAutoPlay : permission.allowAutoPlay,
-    });
-  }
-
-  handleUpdated(tabId, changeInfo, tabInfo) {
-    if (!changeInfo.url) {
-      return;
-    }
-
-    let url = changeInfo.url;
-    Logger.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
-    if (!this.isSupportURLProtocol(url)) {
-      return;
-    }
-
-    let domain = this.getBaseDomainHash(url);
-    this.feature.update("visitPage", domain);
-    this.checkTabAutoplayStatus(tabId)
-  }
 }
 
 class TelemetrySender {
@@ -83,6 +141,7 @@ class ShieldStudyPing {
     this.domainWithAutoplay = new Set();
     this.blockedMediaCount = 0;
     this.promptResponses = [];
+    this.settingChanges = [];
     this.telemetry = new TelemetrySender();
   }
 
@@ -99,6 +158,9 @@ class ShieldStudyPing {
       case "promptChanged":
         this.promptResponses.push(data);
         break;
+      case "settingChanged":
+        this.settingChanges.push(data);
+        break;
       default:
         console.log("Error : incorrect data type");
         break;
@@ -107,33 +169,39 @@ class ShieldStudyPing {
 
   async sendPing() {
     console.log("@@@@@ send ping");
-    let payload = this._constructPayload("counts");
+    let payload = this.constructPayload("counts");
     await this.telemetry.sendTelemetry(payload);
 
     while (this.promptResponses.length > 0) {
-      payload = this._constructPayload("prompt");
+      payload = this.constructPayload("prompt");
+      await this.telemetry.sendTelemetry(payload);
+    }
+
+    while (this.settingChanges.length > 0) {
+      payload = this.constructPayload("settings");
       await this.telemetry.sendTelemetry(payload);
     }
   }
 
   // Utilities functions
-  _constructPayload(type) {
+  constructPayload(type) {
     let payload = {
       id : this._generateUUID(),
       type : type
     };
     switch (type) {
       case "counts":
-          payload.counters = {
-            totalPages : this.domainUserVisited.size,
-            totalPagesAM : this.domainWithAutoplay.size,
-            totalBlockedVideos : this.blockedMediaCount
-          }
+        payload.counters = {
+          totalPages : this.domainUserVisited.size,
+          totalPagesAM : this.domainWithAutoplay.size,
+          totalBlockedVideos : this.blockedMediaCount
+        }
         break;
       case "prompt":
-          payload.promptResponse = this.promptResponses.shift();
+        payload.promptResponse = this.promptResponses.shift();
         break;
       case "settings":
+        payload.settingsChanged = this.settingChanges.shift();
         break;
       default:
         console.log("Error : incorrect payload type");

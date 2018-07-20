@@ -11,7 +11,7 @@
     },
     "types": [
       {
-        "id": "telemetryPayload",
+        "id": "JSONFormat",
         "$schema": "http://json-schema.org/draft-04/schema",
         "type": "object",
         "additionalProperties": true,
@@ -22,38 +22,26 @@
     ],
     "events": [
       {
-        "name": "onSomething",
+        "name": "autoplaySettingChanged",
         "type": "function",
-        "description": "Description of the event",
+        "description": "notify listener when user changes the autoplay setting from about:preferences.",
         "parameters": [
           {
-            "name": "param1",
-            "description": "Description of the first callback parameter",
-            "type": "number"
-          }
-        ]
-      },
-      {
-        "name": "autoplayChanged",
-        "type": "function",
-        "description": "...TODO...",
-        "parameters": [
-          {
-            "name": "url",
-            "description": "the url with autoplay media",
-            "type": "string"
-          }
-        ],
-        "extraParameters": [
-          {
-            "name": "tabId",
-            "description": "The tab id of the tab which we want to monitor for autoplay chagned",
-            "type": "number"
+            "name": "result",
+            "description": "result",
+            "$ref": "JSONFormat"
           }
         ]
       }
     ],
     "functions": [
+      {
+        "name": "testChild",
+        "type": "function",
+        "async": false,
+        "description": "test",
+        "parameters": []
+      },
       {
         "name": "setPreferences",
         "type": "function",
@@ -100,7 +88,7 @@
         "parameters": [
           {
             "name": "payload",
-            "$ref": "telemetryPayload"
+            "$ref": "JSONFormat"
           }
         ],
         "defaultReturn": "undefined",
