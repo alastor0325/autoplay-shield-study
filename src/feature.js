@@ -168,15 +168,17 @@ class ShieldStudyPing {
     let payload = this.constructPayload("counts");
     await this.telemetry.sendTelemetry(payload);
 
-    while (this.promptResponses.length > 0) {
+    if (this.promptResponses.length > 0) {
       payload = this.constructPayload("prompt");
       await this.telemetry.sendTelemetry(payload);
     }
 
-    while (this.settingChanges.length > 0) {
+    if (this.settingChanges.length > 0) {
       payload = this.constructPayload("settings");
       await this.telemetry.sendTelemetry(payload);
     }
+
+    this.reset();
   }
 
   // Utilities functions
@@ -194,10 +196,18 @@ class ShieldStudyPing {
         }
         break;
       case "prompt":
-        payload.promptResponse = this.promptResponses.shift();
+        payload.promptResponse = [];
+        while (this.promptResponses.length > 0) {
+          let data = this.promptResponses.shift()
+          payload.promptResponse.push(data);
+        }
         break;
       case "settings":
-        payload.settingsChanged = this.settingChanges.shift();
+        payload.settingsChanged = [];
+        while (this.settingChanges.length > 0) {
+          let data = this.settingChanges.shift();
+          payload.settingsChanged.push(data);
+        }
         break;
       default:
         console.log("Error : incorrect payload type");
@@ -205,6 +215,15 @@ class ShieldStudyPing {
     }
     Logger.log(payload);
     return payload;
+  }
+
+  reset() {
+    console.log("@@@@ reset @@@@@");
+    this.domainUserVisited.clear();
+    this.domainWithAutoplay.clear();
+    this.blockedMediaCount = 0;
+    this.promptResponses = [];
+    this.settingChanges = [];
   }
 
   _showAllDomainHaseCode() {
