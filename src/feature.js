@@ -29,15 +29,11 @@ class TabsMonitor {
     });
   }
 
-  autoplaySettingChanged(rv) {
-    // TODO : global setting changed
-    this.feature.update("settingChanged", {
-      timestamp : Date.now(),
-      pageSpecific : {
-        pageid : this.getBaseDomainHash(rv.domain),
-        allowAutoPlay : rv.allowAutoplay
-      }
-    });
+  autoplaySettingChanged(data) {
+    if (data.pageSpecific) {
+      data.pageSpecific.pageId = this.getBaseDomainHash(data.pageSpecific.pageId);
+    }
+    this.feature.update("settingChanged", data);
   }
 
   startWaitingForAutoplaySettingChanged() {

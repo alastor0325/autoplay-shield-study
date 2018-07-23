@@ -30,7 +30,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             fire.async(value);
           };
 
-          let observer = function observe(subject, topic, data) {
+          let pageSettingObs = (subject, topic, data) => {
             if (subject.type !== "autoplay-media" || topic !==  "perm-changed") {
               return;
             }
@@ -53,14 +53,31 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             }
             console.log(`@@@@ perm-changed, allowAutoplay=${allowAutoplay}, domain=${domain}`);
             callback({
-              domain : domain,
-              allowAutoplay : allowAutoplay
+              timestamp : Date.now(),
+              pageSpecific : {
+                pageId : domain,
+                allowAutoplay : allowAutoplay
+              }
             });
           };
-          Services.obs.addObserver(observer, "perm-changed");
+
+          let globalSettingObs = () => {
+            let value = Preferences.get("media.autoplay.default", 2 /* prompt */);
+            console.log("@@@@ global setting change, val=" + value);
+            callback({
+              timestamp : Date.now(),
+              globalSettings : {
+                allowAutoPlay: value
+              }
+            });
+          }
+
+          Services.obs.addObserver(pageSettingObs, "perm-changed");
+          Preferences.observe("media.autoplay.default", globalSettingObs);
 
           return () => {
-            Services.obs.removeObserver(observer, "perm-changed");
+            Services.obs.removeObserver(pageSettingObs, "perm-changed");
+            Preferences.ignore("media.autoplay.default", globalSettingObs);
           };
         }).api(),
 
