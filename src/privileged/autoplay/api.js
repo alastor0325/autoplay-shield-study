@@ -51,7 +51,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             } else if (data === "deleted") {
               allowAutoplay = PERM_ACTION.UNKNOWN_ACTION;
             }
-            console.log(`@@@@ perm-changed, allowAutoplay=${allowAutoplay}, domain=${domain}`);
             callback({
               timestamp : Date.now(),
               pageSpecific : {
@@ -63,7 +62,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
           let globalSettingObs = () => {
             let value = Preferences.get("media.autoplay.default", 2 /* prompt */);
-            console.log("@@@@ global setting change, val=" + value);
             callback({
               timestamp : Date.now(),
               globalSettings : {
@@ -90,7 +88,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         },
 
         hasAutoplayMediaContent: async function (tabId) {
-          console.log("@@@@ hasAudibleAutoplayMediaContent");
           function getAutplayURL(tabId) {
             return new Promise(function(resolve, reject) {
               let tab = tabManager.get(tabId).nativeTab;
@@ -134,7 +131,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           let notification = tabManager.get(tabId).nativeTab.ownerGlobal.PopupNotifications;
 
           await _once(notification.panel, "popupshown");
-          console.log("@@@ show pop-up notifications");
 
           let status = await getPromptStatus().catch((err) => { console.log(err);})
           return status;
@@ -144,6 +140,14 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           const telOptions = { addClientId: true, addEnvironment: true };
           // TODO : add other info : like ID, branch
           return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
+        },
+
+        getBlockedAudibleMediaCount: async function() {
+          let scalar = Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+          let count = scalar.content["media.autoplay_would_not_be_allowed_count"];
+          // TODO : fix this!
+          // Services.telemetry.scalarSet("media.autoplay_would_not_be_allowed_count", 0);
+          return count;
         }
       }
     };

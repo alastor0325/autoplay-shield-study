@@ -129,7 +129,7 @@ class TelemetrySender {
     // Add validation for JSON
     browser.autoplay.sendTelemetry(payload)
   }
-};
+}
 
 class ShieldStudyPing {
   constructor() {
@@ -165,24 +165,23 @@ class ShieldStudyPing {
 
   async sendPing() {
     console.log("@@@@@ send ping");
-    let payload = this.constructPayload("counts");
+    let payload = await this.constructPayload("counts");
     await this.telemetry.sendTelemetry(payload);
 
     if (this.promptResponses.length > 0) {
-      payload = this.constructPayload("prompt");
+      payload = await this.constructPayload("prompt");
       await this.telemetry.sendTelemetry(payload);
     }
 
     if (this.settingChanges.length > 0) {
-      payload = this.constructPayload("settings");
+      payload = await this.constructPayload("settings");
       await this.telemetry.sendTelemetry(payload);
     }
 
     this.reset();
   }
 
-  // Utilities functions
-  constructPayload(type) {
+  async constructPayload(type) {
     let payload = {
       id : this._generateUUID(),
       type : type
@@ -192,7 +191,7 @@ class ShieldStudyPing {
         payload.counters = {
           totalPages : this.domainUserVisited.size,
           totalPagesAM : this.domainWithAutoplay.size,
-          totalBlockedVideos : this.blockedMediaCount
+          totalBlockedAudibleMedia : await this.getBlockedAudibleMediaCount()
         }
         break;
       case "prompt":
@@ -224,6 +223,17 @@ class ShieldStudyPing {
     this.blockedMediaCount = 0;
     this.promptResponses = [];
     this.settingChanges = [];
+  }
+
+  async getBlockedAudibleMediaCount() {
+    let accumulatedCount = await browser.autoplay.getBlockedAudibleMediaCount();
+    // Workaround : since we can't reset the telemetry scalar so the data we got
+    // is accumulation, we need to transform it by ourself
+    let count = (accumulatedCount > this.blockedMediaCount) ?
+      accumulatedCount - this.blockedMediaCount : 0;
+    console.log(`@@ accumulatedCount=${accumulatedCount}, count=${count}, blockCount=${this.blockedMediaCount}`);
+    this.blockedMediaCount = accumulatedCount;
+    return count;
   }
 
   _showAllDomainHaseCode() {

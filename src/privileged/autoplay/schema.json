@@ -93,6 +93,15 @@
         ],
         "defaultReturn": "undefined",
         "returns": null
+      },
+      {
+        "name": "getBlockedAudibleMediaCount",
+        "type": "function",
+        "description": "get the total amount of blocked autoplay media",
+        "async": true,
+        "parameters": [],
+        "defaultReturn": "undefined",
+        "returns": null
       }
     ]
   }
