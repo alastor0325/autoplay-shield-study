@@ -113,6 +113,10 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     // the count we get is accumulated with session life time, so we need to calculate
     // the count within the period between sending the ping.
     let accumulatedCount = scalar.content["media.autoplay_would_not_be_allowed_count"];
+    if (!Number.isInteger(accumulatedCount)) {
+      return 0;
+    }
+
     let count = accumulatedCount - this.blockedAudibleAutoplayCount;
     if (count < 0) {
       console.log("### Error : count should not be negative.");
