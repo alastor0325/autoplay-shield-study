@@ -18,7 +18,111 @@ function _once(target, name) {
   return p;
 }
 
+function errorHandler(err) {
+  console.log(`### Error=${err}`);
+}
+
+Services.obs.addObserver((subject, topic, data) => {
+  console.log("@@@@ get AudibleAutoplayMediaOccurred from extension ###");
+  console.log(subject);
+}, "AudibleAutoplayMediaOccurred");
+
 this.autoplay = class AutoplayAPI extends ExtensionAPI {
+  constructor(extension) {
+    super(extension);
+    this.domainUserVisited = new Set();
+    this.domainWithAutoplay = new Set();
+    this.promptResponses = [];
+    this.settingChanges = [];
+    this.pingId = 0;
+  }
+
+  async onShutdown(shutdownReason) {
+    console.log("@@@@@@ onShutdown, reason=" + shutdownReason);
+    return new Promise(async (resolve) => {
+      await this.sendTelemetryPings();
+      resolve();
+    });
+  }
+
+  async sendTelemetryPings() {
+    let payload;
+    if (this.domainUserVisited.size > 0) {
+      payload = this.constructPayload("counts");
+      await this.submitTelemetryPing(payload).catch(errorHandler);
+    }
+
+    if (this.promptResponses.length > 0) {
+      payload = this.constructPayload("prompt");
+      await this.submitTelemetryPing(payload).catch(errorHandler);
+    }
+
+    if (this.settingChanges.length > 0) {
+      payload = this.constructPayload("settings");
+      await this.submitTelemetryPing(payload).catch(errorHandler);
+    }
+
+    this.reset();
+  }
+
+  submitTelemetryPing(data) {
+    console.log(data);
+    const telOptions = { addClientId: true, addEnvironment: true };
+    // TODO : verifty JSON
+    return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
+  }
+
+  constructPayload(type) {
+    // TODO : add other info : like ID, branch
+    let payload = {
+      id : this.pingId++,
+      type : type
+    };
+    switch (type) {
+      case "counts":
+        payload.counters = {
+          totalPages : this.domainUserVisited.size,
+          totalPagesAM : this.domainWithAutoplay.size,
+          totalBlockedAudibleMedia : this.getBlockedAudibleMediaCount()
+        }
+        break;
+      case "prompt":
+        payload.promptResponse = [];
+        while (this.promptResponses.length > 0) {
+          let data = this.promptResponses.shift()
+          payload.promptResponse.push(data);
+        }
+        break;
+      case "settings":
+        payload.settingsChanged = [];
+        while (this.settingChanges.length > 0) {
+          let data = this.settingChanges.shift();
+          payload.settingsChanged.push(data);
+        }
+        break;
+      default:
+        console.log("Error : incorrect payload type");
+        break;
+    }
+    return payload;
+  }
+
+  getBlockedAudibleMediaCount() {
+    let scalar = Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+    let count = scalar.content["media.autoplay_would_not_be_allowed_count"];
+    // TODO : fix this!
+    // Services.telemetry.scalarSet("media.autoplay_would_not_be_allowed_count", 0);
+    return count;
+  }
+
+  reset() {
+    this.domainUserVisited.clear();
+    this.domainWithAutoplay.clear();
+    this.promptResponses = [];
+    this.settingChanges = [];
+    this.pingId = 0;
+  }
+
   getAPI(context) {
     const {extension} = context;
     const {tabManager} = extension;
@@ -79,7 +183,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           };
         }).api(),
 
-        setPreferences: function setPreferences() {
+        setPreferences: () => {
           Preferences.set({
             "media.autoplay.enabled" : false,
             "media.autoplay.enabled.user-gestures-needed" : true,
@@ -87,7 +191,8 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           });
         },
 
-        hasAutoplayMediaContent: async function (tabId) {
+        hasAutoplayMediaContent: async (tabId) => {
+          console.log("@@@@@ hasAutoplayMediaContent");
           function getAutplayURL(tabId) {
             return new Promise(function(resolve, reject) {
               let tab = tabManager.get(tabId).nativeTab;
@@ -99,7 +204,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
               });
               tab.ownerGlobal.setTimeout(function assumeNoAutoplay() {
                 reject("Pass too much time, assume the website doesn't contain autoplay.");
-              }, 3000);
+              }, 30000);
             });
           }
 
@@ -110,7 +215,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           return url;
         },
 
-        getAutoplayPermission : async function getAutoplayPermission(tabId, url) {
+        getAutoplayPermission : async (tabId, url) => {
           function getPromptStatus() {
             return new Promise(function(resolve, reject) {
               notification.panel.firstChild.onclick = (e) => {
@@ -136,19 +241,33 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           return status;
         },
 
-        sendTelemetry: async function sendTelemetry(data) {
-          const telOptions = { addClientId: true, addEnvironment: true };
-          // TODO : add other info : like ID, branch
-          return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
+        testSendTelemetry: async (data) => {
+          this.sendTelemetryPings();
         },
 
-        getBlockedAudibleMediaCount: async function() {
-          let scalar = Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-          let count = scalar.content["media.autoplay_would_not_be_allowed_count"];
-          // TODO : fix this!
-          // Services.telemetry.scalarSet("media.autoplay_would_not_be_allowed_count", 0);
-          return count;
-        }
+        updatePingData: async (type, data) => {
+          console.log("@@@@@@@");
+          console.log(type);
+          console.log(data);
+          console.log("@@@@@@@");
+          switch (type) {
+            case "visitPage":
+              this.domainUserVisited.add(data.pageId);
+              break;
+            case "autoplayOccur":
+              this.domainWithAutoplay.add(data.pageId);
+              break;
+            case "promptChanged":
+              this.promptResponses.push(data);
+              break;
+            case "settingChanged":
+              this.settingChanges.push(data);
+              break;
+            default:
+              console.log("Error : incorrect data type");
+              break;
+          }
+        },
       }
     };
   }

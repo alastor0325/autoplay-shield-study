@@ -73,7 +73,7 @@
             "type": "number",
             "description": "tab id"
           },
-           {
+          {
             "name": "url",
             "type": "string",
             "description": "autoplay url"
@@ -81,25 +81,30 @@
         ]
       },
       {
-        "name": "sendTelemetry",
+        "name": "testSendTelemetry",
         "type": "function",
-        "description": "send Telemetry ping",
+        "description": "testing send Telemetry ping",
+        "async": true,
+        "parameters": [],
+        "defaultReturn": "undefined",
+        "returns": null
+      },
+      {
+        "name": "updatePingData",
+        "type": "function",
+        "description": "update ping data",
         "async": true,
         "parameters": [
+          {
+            "name": "type",
+            "type": "string",
+            "description": "data type"
+          },
           {
             "name": "payload",
             "$ref": "JSONFormat"
           }
         ],
-        "defaultReturn": "undefined",
-        "returns": null
-      },
-      {
-        "name": "getBlockedAudibleMediaCount",
-        "type": "function",
-        "description": "get the total amount of blocked autoplay media",
-        "async": true,
-        "parameters": [],
         "defaultReturn": "undefined",
         "returns": null
       }

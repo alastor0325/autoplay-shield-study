@@ -121,144 +121,14 @@ class TabsMonitor {
   }
 }
 
-class TelemetrySender {
-  constructor() {}
-
-  sendTelemetry(payload) {
-    // browser.study.sendTelemetry(payload);
-    // Add validation for JSON
-    browser.autoplay.sendTelemetry(payload)
-  }
-}
-
-class ShieldStudyPing {
-  constructor() {
-    this.domainUserVisited = new Set();
-    this.domainWithAutoplay = new Set();
-    this.blockedMediaCount = 0;
-    this.promptResponses = [];
-    this.settingChanges = [];
-    this.telemetry = new TelemetrySender();
-  }
-
-  updatePingData(type, data) {
-    Logger.log(`type : ${type}`);
-    Logger.log(data);
-    switch (type) {
-      case "visitPage":
-        this.domainUserVisited.add(data);
-        break;
-      case "autoplayOccur":
-        this.domainWithAutoplay.add(data);
-        break;
-      case "promptChanged":
-        this.promptResponses.push(data);
-        break;
-      case "settingChanged":
-        this.settingChanges.push(data);
-        break;
-      default:
-        console.log("Error : incorrect data type");
-        break;
-    }
-  }
-
-  async sendPing() {
-    console.log("@@@@@ send ping");
-    let payload = await this.constructPayload("counts");
-    await this.telemetry.sendTelemetry(payload);
-
-    if (this.promptResponses.length > 0) {
-      payload = await this.constructPayload("prompt");
-      await this.telemetry.sendTelemetry(payload);
-    }
-
-    if (this.settingChanges.length > 0) {
-      payload = await this.constructPayload("settings");
-      await this.telemetry.sendTelemetry(payload);
-    }
-
-    this.reset();
-  }
-
-  async constructPayload(type) {
-    let payload = {
-      id : this._generateUUID(),
-      type : type
-    };
-    switch (type) {
-      case "counts":
-        payload.counters = {
-          totalPages : this.domainUserVisited.size,
-          totalPagesAM : this.domainWithAutoplay.size,
-          totalBlockedAudibleMedia : await this.getBlockedAudibleMediaCount()
-        }
-        break;
-      case "prompt":
-        payload.promptResponse = [];
-        while (this.promptResponses.length > 0) {
-          let data = this.promptResponses.shift()
-          payload.promptResponse.push(data);
-        }
-        break;
-      case "settings":
-        payload.settingsChanged = [];
-        while (this.settingChanges.length > 0) {
-          let data = this.settingChanges.shift();
-          payload.settingsChanged.push(data);
-        }
-        break;
-      default:
-        console.log("Error : incorrect payload type");
-        break;
-    }
-    Logger.log(payload);
-    return payload;
-  }
-
-  reset() {
-    console.log("@@@@ reset @@@@@");
-    this.domainUserVisited.clear();
-    this.domainWithAutoplay.clear();
-    this.blockedMediaCount = 0;
-    this.promptResponses = [];
-    this.settingChanges = [];
-  }
-
-  async getBlockedAudibleMediaCount() {
-    let accumulatedCount = await browser.autoplay.getBlockedAudibleMediaCount();
-    // Workaround : since we can't reset the telemetry scalar so the data we got
-    // is accumulation, we need to transform it by ourself
-    let count = (accumulatedCount > this.blockedMediaCount) ?
-      accumulatedCount - this.blockedMediaCount : 0;
-    console.log(`@@ accumulatedCount=${accumulatedCount}, count=${count}, blockCount=${this.blockedMediaCount}`);
-    this.blockedMediaCount = accumulatedCount;
-    return count;
-  }
-
-  _showAllDomainHaseCode() {
-    for (let item of this.domainUserVisited) {
-      Logger.log(item);
-    }
-    for (let item of this.domainWithAutoplay) {
-      Logger.log(item);
-    }
-  }
-
-  _generateUUID() {
-    return  Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15);
-  }
-}
-
 class Feature {
   constructor() {
-    this.ping = new ShieldStudyPing();
     this.tabsMonitor = new TabsMonitor(this);
 
     // for test
     browser.browserAction.onClicked.addListener(() => {
-      this.ping.sendPing();
+      console.log("@@@@@ test send ping");
+      browser.autoplay.testSendTelemetry();
     });
   }
 
@@ -270,7 +140,10 @@ class Feature {
   }
 
   update(type, data) {
-    this.ping.updatePingData(type, data);
+    if (type == "visitPage" || type == "autoplayOccur") {
+       data = {pageId : data};
+    }
+    browser.autoplay.updatePingData(type, data);
   }
 
   /**
