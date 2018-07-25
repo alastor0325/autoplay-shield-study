@@ -32,6 +32,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     super(extension);
     this.domainUserVisited = new Set();
     this.domainWithAutoplay = new Set();
+    this.blockedAudibleAutoplayCount = 0;
     this.promptResponses = [];
     this.settingChanges = [];
     this.pingId = 0;
@@ -109,9 +110,14 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
   getBlockedAudibleMediaCount() {
     let scalar = Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-    let count = scalar.content["media.autoplay_would_not_be_allowed_count"];
-    // TODO : fix this!
-    // Services.telemetry.scalarSet("media.autoplay_would_not_be_allowed_count", 0);
+    // the count we get is accumulated with session life time, so we need to calculate
+    // the count within the period between sending the ping.
+    let accumulatedCount = scalar.content["media.autoplay_would_not_be_allowed_count"];
+    let count = accumulatedCount - this.blockedAudibleAutoplayCount;
+    if (count < 0) {
+      console.log("### Error : count should not be negative.");
+    }
+    this.blockedAudibleAutoplayCount = count;
     return count;
   }
 
