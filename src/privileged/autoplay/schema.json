@@ -36,13 +36,6 @@
     ],
     "functions": [
       {
-        "name": "testChild",
-        "type": "function",
-        "async": false,
-        "description": "test",
-        "parameters": []
-      },
-      {
         "name": "setPreferences",
         "type": "function",
         "async": false,
