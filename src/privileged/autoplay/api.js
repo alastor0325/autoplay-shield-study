@@ -247,7 +247,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           return status;
         },
 
-        testSendTelemetry: async (data) => {
+        sendTelemetry: async (data) => {
           this.sendTelemetryPings();
         },
 

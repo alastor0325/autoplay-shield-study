@@ -81,9 +81,9 @@
         ]
       },
       {
-        "name": "testSendTelemetry",
+        "name": "sendTelemetry",
         "type": "function",
-        "description": "testing send Telemetry ping",
+        "description": "send all pings we've collect to server",
         "async": true,
         "parameters": [],
         "defaultReturn": "undefined",

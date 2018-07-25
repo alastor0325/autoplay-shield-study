@@ -125,10 +125,13 @@ class Feature {
   constructor() {
     this.tabsMonitor = new TabsMonitor(this);
 
+    const sendPingIntervalMS = 1 * 24 * 60 * 60 * 1000;
+    this.sendPingsScheduler(sendPingIntervalMS);
+
     // for test
     browser.browserAction.onClicked.addListener(() => {
       console.log("@@@@@ test send ping");
-      browser.autoplay.testSendTelemetry();
+      browser.autoplay.sendTelemetry();
     });
   }
 
@@ -144,6 +147,12 @@ class Feature {
        data = {pageId : data};
     }
     browser.autoplay.updatePingData(type, data);
+  }
+
+  sendPingsScheduler(interval) {
+     setInterval((interval) => {
+      browser.autoplay.sendTelemetry();
+    }, interval);
   }
 
   /**
