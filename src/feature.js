@@ -1,5 +1,40 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "(feature)" }]*/
 
+const gId = generateUUID();
+
+function generateUUID() {
+  return  Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+}
+
+function isSupportURLProtocol(url) {
+  return !!(url.match(/^(http(s?):\/\/)/im));
+}
+
+function getBaseDomain(url) {
+  return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
+}
+
+function getBaseDomainHash(url) {
+  let baseDomain = getBaseDomain(url);
+  console.log(`Domain = ${baseDomain}`);
+
+  let hash = 0, i, chr;
+  if (baseDomain.length === 0) {
+    return hash
+  };
+
+  // use salted-hash
+  baseDomain += gId;
+  for (i = 0; i < baseDomain.length; i++) {
+    chr   = baseDomain.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  console.log(`HashCode = ${hash}`);
+  return hash;
+}
+
 class TabsMonitor {
   constructor(feature) {
     this.feature = feature;
@@ -17,11 +52,11 @@ class TabsMonitor {
 
   async handleAutoplayOccurred(tabId, url) {
     console.log(`@@@@ handleAutoplayOccurred, url=${url}, id=${tabId}`);
-     if (!this.isSupportURLProtocol(url)) {
+     if (!isSupportURLProtocol(url)) {
       return;
     }
 
-    let hashURL = this.getBaseDomainHash(url);
+    let hashURL = getBaseDomainHash(url);
     this.feature.update("autoplayOccur", hashURL);
 
     let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
@@ -41,11 +76,11 @@ class TabsMonitor {
 
   // async checkTabAutoplayStatus(tabId) {
   //   let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
-  //   if (!this.isSupportURLProtocol(url)) {
+  //   if (!isSupportURLProtocol(url)) {
   //     return;
   //   }
 
-  //   let hashURL = this.getBaseDomainHash(url);
+  //   let hashURL = getBaseDomainHash(url);
   //   this.feature.update("autoplayOccur", hashURL);
 
   //   let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
@@ -59,7 +94,7 @@ class TabsMonitor {
 
   autoplaySettingChanged(data) {
     if (data.pageSpecific) {
-      data.pageSpecific.pageId = this.getBaseDomainHash(data.pageSpecific.pageId);
+      data.pageSpecific.pageId = getBaseDomainHash(data.pageSpecific.pageId);
     }
     this.feature.update("settingChanged", data);
   }
@@ -102,16 +137,16 @@ class TabsMonitor {
     }
 
     let url = changeInfo.url;
-    Logger.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
+    console.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
     if (this.checkIfEneteringSettingPrivacyPage(tabId, url)) {
       return;
     }
 
-    if (!this.isSupportURLProtocol(url)) {
+    if (!isSupportURLProtocol(url)) {
       return;
     }
 
-    let domain = this.getBaseDomainHash(url);
+    let domain = getBaseDomainHash(url);
     this.feature.update("visitPage", domain);
     // this.checkTabAutoplayStatus(tabId)
   }
@@ -121,36 +156,11 @@ class TabsMonitor {
       this.removeSettingTabId(tabId);
     }
   }
-
-  isSupportURLProtocol(url) {
-    return !!(url.match(/^(http(s?):\/\/)/im));
-  }
-
-  getBaseDomain(url) {
-    return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
-  }
-
-  getBaseDomainHash(url) {
-    // TODO : salted-hash
-    let baseDomain = this.getBaseDomain(url);
-    Logger.log(`Domain = ${baseDomain}`);
-
-    let hash = 0, i, chr;
-    if (baseDomain.length === 0) {
-      return hash
-    };
-    for (i = 0; i < baseDomain.length; i++) {
-      chr   = baseDomain.charCodeAt(i);
-      hash  = ((hash << 5) - hash) + chr;
-      hash |= 0; // Convert to 32bit integer
-    }
-    Logger.log(`HashCode = ${hash}`);
-    return hash;
-  }
 }
 
 class Feature {
   constructor() {
+    this.id = generateUUID();
     this.tabsMonitor = new TabsMonitor(this);
 
     const sendPingIntervalMS = 1 * 24 * 60 * 60 * 1000;
@@ -191,15 +201,6 @@ class Feature {
     this.tabsMonitor.clear();
   }
 }
-
-var Logger = {
-  openLog : true,
-  log : function log(msg) {
-    if (!!this.openLog) {
-      console.log(msg);
-    }
-  }
-};
 
 // make an instance of the feature class available to background.js
 // construct only. will be configured after setup
