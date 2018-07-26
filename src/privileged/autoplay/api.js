@@ -1,10 +1,10 @@
 "use strict";
 
 ChromeUtils.import("resource:///modules/SitePermissions.jsm");
-ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
 ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
 
 const CID = ChromeUtils.import("resource://gre/modules/ClientID.jsm", {});
 const { EventManager } = ExtensionCommon;
@@ -20,6 +20,14 @@ function _once(target, name) {
 
 function errorHandler(err) {
   console.log(`### Error=${err}`);
+}
+
+function getTelemetryId() {
+  const id = TelemetryController.clientID;
+  if (id === undefined) {
+    return CID.ClientIDImpl._doLoadClientID();
+  }
+  return id;
 }
 
 this.autoplay = class AutoplayAPI extends ExtensionAPI {
@@ -44,17 +52,17 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   async sendTelemetryPings() {
     let payload;
     if (this.domainUserVisited.size > 0) {
-      payload = this.constructPayload("counts");
+      payload = await this.constructPayload("counts");
       await this.submitTelemetryPing(payload).catch(errorHandler);
     }
 
     if (this.promptResponses.length > 0) {
-      payload = this.constructPayload("prompt");
+      payload = await this.constructPayload("prompt");
       await this.submitTelemetryPing(payload).catch(errorHandler);
     }
 
     if (this.settingChanges.length > 0) {
-      payload = this.constructPayload("settings");
+      payload = await this.constructPayload("settings");
       await this.submitTelemetryPing(payload).catch(errorHandler);
     }
 
@@ -68,10 +76,12 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
   }
 
-  constructPayload(type) {
+  async constructPayload(type) {
     // TODO : add other info : like ID, branch
     let payload = {
       id : this.pingId++,
+      client_id : await getTelemetryId(),
+      branch : "none", // TODO
       type : type
     };
     switch (type) {
