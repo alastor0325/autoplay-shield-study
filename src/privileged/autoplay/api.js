@@ -166,9 +166,10 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             }
 
             if (data === "added") {
-              allowAutoplay = (subject.capability == PERM_ACTION.ALLOW_ACTION);
+              allowAutoplay = (subject.capability == PERM_ACTION.ALLOW_ACTION) ?
+                "allow" : "block";
             } else if (data === "deleted") {
-              allowAutoplay = PERM_ACTION.UNKNOWN_ACTION;
+              allowAutoplay = "default";
             }
             callback({
               timestamp : Date.now(),
@@ -181,10 +182,12 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
           let globalSettingObs = () => {
             let value = Preferences.get("media.autoplay.default", 2 /* prompt */);
+            let status = (value == 0) ?
+              "allow" : ((value == 1) ? "block" : "ask");
             callback({
               timestamp : Date.now(),
               globalSettings : {
-                allowAutoPlay: value
+                allowAutoPlay: status
               }
             });
           }
