@@ -39,23 +39,23 @@ class TabsMonitor {
     browser.autoplay.audibleAutoplayOccurred.addListener(this.autoplayListener);
   }
 
-  async checkTabAutoplayStatus(tabId) {
-    let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
-    if (!this.isSupportURLProtocol(url)) {
-      return;
-    }
+  // async checkTabAutoplayStatus(tabId) {
+  //   let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
+  //   if (!this.isSupportURLProtocol(url)) {
+  //     return;
+  //   }
 
-    let hashURL = this.getBaseDomainHash(url);
-    this.feature.update("autoplayOccur", hashURL);
+  //   let hashURL = this.getBaseDomainHash(url);
+  //   this.feature.update("autoplayOccur", hashURL);
 
-    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
-    this.feature.update("promptChanged", {
-      pageId : hashURL,
-      timestamp : Date.now(),
-      rememberCheckbox : permission.rememberCheckbox,
-      allowAutoPlay : permission.allowAutoPlay,
-    });
-  }
+  //   let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
+  //   this.feature.update("promptChanged", {
+  //     pageId : hashURL,
+  //     timestamp : Date.now(),
+  //     rememberCheckbox : permission.rememberCheckbox,
+  //     allowAutoPlay : permission.allowAutoPlay,
+  //   });
+  // }
 
   autoplaySettingChanged(data) {
     if (data.pageSpecific) {
