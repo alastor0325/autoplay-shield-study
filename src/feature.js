@@ -6,9 +6,37 @@ class TabsMonitor {
     this.settingTabIds = new Set();
     this.privacyPageURL = "about:preferences#privacy";
     this.settingListener = this.autoplaySettingChanged.bind(this);
+    this.autoplayListener = this.handleAutoplayOccurred.bind(this);
+    this.tabUpdatedListener = this.handleUpdated.bind(this);
+    this.tabRemovedListener = this.handleRemoved.bind(this);
 
-    browser.tabs.onUpdated.addListener(this.handleUpdated.bind(this));
-    browser.tabs.onRemoved.addListener(this.handleRemoved.bind(this));
+    browser.tabs.onUpdated.addListener(this.tabUpdatedListener);
+    browser.tabs.onRemoved.addListener(this.tabRemovedListener);
+    browser.autoplay.audibleAutoplayOccurred.addListener(this.autoplayListener);
+  }
+
+  async handleAutoplayOccurred(tabId, url) {
+    console.log(`@@@@ handleAutoplayOccurred, url=${url}, id=${tabId}`);
+     if (!this.isSupportURLProtocol(url)) {
+      return;
+    }
+
+    let hashURL = this.getBaseDomainHash(url);
+    this.feature.update("autoplayOccur", hashURL);
+
+    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
+    this.feature.update("promptChanged", {
+      pageId : hashURL,
+      timestamp : Date.now(),
+      rememberCheckbox : permission.rememberCheckbox,
+      allowAutoPlay : permission.allowAutoPlay,
+    });
+  }
+
+  clear() {
+    browser.tabs.onUpdated.removeListener(this.tabUpdatedListener);
+    browser.tabs.onRemoved.removeListener(this.tabRemovedListener);
+    browser.autoplay.audibleAutoplayOccurred.addListener(this.autoplayListener);
   }
 
   async checkTabAutoplayStatus(tabId) {
@@ -85,7 +113,7 @@ class TabsMonitor {
 
     let domain = this.getBaseDomainHash(url);
     this.feature.update("visitPage", domain);
-    this.checkTabAutoplayStatus(tabId)
+    // this.checkTabAutoplayStatus(tabId)
   }
 
   handleRemoved(tabId, removeInfo) {
@@ -159,7 +187,9 @@ class Feature {
    * Called at end of study, and if the user disables the study or it gets
    * uninstalled by other means.
    */
-  async cleanup() {}
+  async cleanup() {
+    this.tabsMonitor.clear();
+  }
 }
 
 var Logger = {

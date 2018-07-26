@@ -32,6 +32,23 @@
             "$ref": "JSONFormat"
           }
         ]
+      },
+      {
+        "name": "audibleAutoplayOccurred",
+        "type": "function",
+        "description": "notify listener when website is trying to autoplay audible media.",
+        "parameters": [
+          {
+            "name": "tabId",
+            "type": "number",
+            "description": "tab id"
+          },
+          {
+            "name": "url",
+            "type": "string",
+            "description": "the url which is trying to autoplay"
+          }
+        ]
       }
     ],
     "functions": [

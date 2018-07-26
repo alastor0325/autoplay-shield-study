@@ -22,11 +22,6 @@ function errorHandler(err) {
   console.log(`### Error=${err}`);
 }
 
-Services.obs.addObserver((subject, topic, data) => {
-  console.log("@@@@ get AudibleAutoplayMediaOccurred from extension ###");
-  console.log(subject);
-}, "AudibleAutoplayMediaOccurred");
-
 this.autoplay = class AutoplayAPI extends ExtensionAPI {
   constructor(extension) {
     super(extension);
@@ -190,6 +185,18 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           return () => {
             Services.obs.removeObserver(pageSettingObs, "perm-changed");
             Preferences.ignore("media.autoplay.default", globalSettingObs);
+          };
+        }).api(),
+
+        audibleAutoplayOccurred: new EventManager(context, "autoplay.audibleAutoplayOccurred", fire => {
+          let autoplayObs = (subject, topic, data) => {
+            fire.async(tabManager.getWrapper(subject).id,
+                       subject.linkedBrowser.currentURI.spec.toString());
+          }
+          Services.obs.addObserver(autoplayObs, "AudibleAutoplayMediaOccurred");
+
+          return () => {
+            Services.obs.removeObserver(autoplayObs, "AudibleAutoplayMediaOccurred");
           };
         }).api(),
 
