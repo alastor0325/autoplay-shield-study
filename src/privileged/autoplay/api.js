@@ -213,11 +213,32 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           };
         }).api(),
 
-        setPreferences: () => {
+        setPreferences: (variation) => {
+          console.log(`@@@@ variation=${variation}`);
+          let layout;
+          switch (variation) {
+            case "control":
+            case "allow-and-notRemember":
+              layout = 0;
+              break;
+            case "deny-and-notRemember":
+              layout = 1;
+              break;
+            case "allow-and-remember":
+              layout = 2;
+              break;
+            case "deny-and-remember":
+              layout = 3;
+              break;
+            default:
+              console.log("### Error, undefined variation.")
+              break;
+          }
           Preferences.set({
-            "media.autoplay.enabled" : false,
+            "media.autoplay.default" : variation == "control" ? 0 : 2,
             "media.autoplay.enabled.user-gestures-needed" : true,
-            "media.autoplay.ask-permission" : true
+            "media.autoplay.ask-permission" : true,
+            "media.autoplay.prompt-layout" : layout
           });
         },
 

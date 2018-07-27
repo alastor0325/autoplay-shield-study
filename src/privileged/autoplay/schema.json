@@ -57,7 +57,13 @@
         "type": "function",
         "async": false,
         "description": "setup testing preferences",
-        "parameters": []
+        "parameters": [
+          {
+            "name": "variation",
+            "type": "string",
+            "description": "it's used to decide which testing group user is in."
+          }
+        ]
       },
       {
         "name": "hasAutoplayMediaContent",

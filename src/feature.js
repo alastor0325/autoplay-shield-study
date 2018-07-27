@@ -177,7 +177,7 @@ class Feature {
     const feature = this;
     const { variation, isFirstRun } = studyInfo;
     console.log(studyInfo);
-    browser.autoplay.setPreferences();
+    browser.autoplay.setPreferences(variation.name);
   }
 
   update(type, data) {
