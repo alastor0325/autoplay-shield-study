@@ -243,30 +243,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           });
         },
 
-        hasAutoplayMediaContent: async (tabId) => {
-          console.log("@@@@@ hasAutoplayMediaContent");
-          function getAutplayURL(tabId) {
-            return new Promise(function(resolve, reject) {
-              let tab = tabManager.get(tabId).nativeTab;
-              tab.addEventListener("TabAttrModified", (event) => {
-                console.log(event.detail.changed);
-                if (event.detail.changed.includes("contain-autoplay-media")) {
-                  resolve(event.target.linkedBrowser.currentURI.spec.toString());
-                }
-              });
-              tab.ownerGlobal.setTimeout(function assumeNoAutoplay() {
-                reject("Pass too much time, assume the website doesn't contain autoplay.");
-              }, 30000);
-            });
-          }
-
-          let url = await getAutplayURL(tabId).catch((msg) => {
-            console.log(msg);
-            return msg;
-          });
-          return url;
-        },
-
         getAutoplayPermission : async (tabId, url) => {
           function getPromptStatus() {
             return new Promise(function(resolve, reject) {
