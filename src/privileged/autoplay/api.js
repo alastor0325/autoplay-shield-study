@@ -42,7 +42,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   }
 
   async onShutdown(shutdownReason) {
-    console.log("@@@@@@ onShutdown, reason=" + shutdownReason);
+    console.log(`onShutdown, reason=${shutdownReason}`);
     return new Promise(async (resolve) => {
       await this.sendTelemetryPings();
       resolve();
@@ -70,6 +70,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   }
 
   submitTelemetryPing(data) {
+    console.log("submitTelemetryPing to server");
     console.log(data);
     const telOptions = { addClientId: true, addEnvironment: true };
     // TODO : verifty JSON
@@ -214,7 +215,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         }).api(),
 
         setPreferences: (variation) => {
-          console.log(`@@@@ variation=${variation}`);
+          console.log(`variation=${variation}`);
           let layout;
           switch (variation) {
             case "control":
@@ -297,10 +298,8 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         },
 
         updatePingData: async (type, data) => {
-          console.log("@@@@@@@");
-          console.log(type);
+          console.log(`updatePingData, type=${type}`);
           console.log(data);
-          console.log("@@@@@@@");
           switch (type) {
             case "visitPage":
               this.domainUserVisited.add(data.pageId);

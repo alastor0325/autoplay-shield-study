@@ -17,8 +17,6 @@ function getBaseDomain(url) {
 
 function getBaseDomainHash(url) {
   let baseDomain = getBaseDomain(url);
-  console.log(`Domain = ${baseDomain}`);
-
   let hash = 0, i, chr;
   if (baseDomain.length === 0) {
     return hash
@@ -31,7 +29,6 @@ function getBaseDomainHash(url) {
     hash  = ((hash << 5) - hash) + chr;
     hash |= 0; // Convert to 32bit integer
   }
-  console.log(`HashCode = ${hash}`);
   return hash;
 }
 
@@ -51,7 +48,7 @@ class TabsMonitor {
   }
 
   async handleAutoplayOccurred(tabId, url) {
-    console.log(`@@@@ handleAutoplayOccurred, url=${url}, id=${tabId}`);
+    console.log(`handleAutoplayOccurred, url=${url}, id=${tabId}`);
      if (!isSupportURLProtocol(url)) {
       return;
     }
@@ -114,7 +111,7 @@ class TabsMonitor {
     }
 
     let url = changeInfo.url;
-    console.log(`@@@ update : TabId: ${tabId}, URL changed to ${url}`);
+    console.log(`tab update : TabId: ${tabId}, URL changed to ${url}`);
     if (this.checkIfEneteringSettingPrivacyPage(tabId, url)) {
       return;
     }
