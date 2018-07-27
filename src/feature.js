@@ -77,24 +77,6 @@ class TabsMonitor {
     }
   }
 
-  // async checkTabAutoplayStatus(tabId) {
-  //   let url = await browser.autoplay.hasAutoplayMediaContent(tabId);
-  //   if (!isSupportURLProtocol(url)) {
-  //     return;
-  //   }
-
-  //   let hashURL = getBaseDomainHash(url);
-  //   this.feature.update("autoplayOccur", hashURL);
-
-  //   let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
-  //   this.feature.update("promptChanged", {
-  //     pageId : hashURL,
-  //     timestamp : Date.now(),
-  //     rememberCheckbox : permission.rememberCheckbox,
-  //     allowAutoPlay : permission.allowAutoPlay,
-  //   });
-  // }
-
   autoplaySettingChanged(data) {
     if (data.pageSpecific) {
       data.pageSpecific.pageId = getBaseDomainHash(data.pageSpecific.pageId);
@@ -143,7 +125,6 @@ class TabsMonitor {
 
     let domain = getBaseDomainHash(url);
     this.feature.update("visitPage", domain);
-    // this.checkTabAutoplayStatus(tabId)
   }
 
   handleRemoved(tabId, removeInfo) {
