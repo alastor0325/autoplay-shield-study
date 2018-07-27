@@ -33,7 +33,7 @@ function getBaseDomainHash(url) {
 }
 
 class TabsMonitor {
-  constructor(feature) {
+  configure(feature) {
     this.feature = feature;
     this.settingTabIds = new Set();
     this.privacyPageURL = "about:preferences#privacy";
@@ -132,25 +132,25 @@ class TabsMonitor {
 }
 
 class Feature {
-  constructor() {
-    this.id = generateUUID();
-    this.tabsMonitor = new TabsMonitor(this);
+  constructor() {}
 
+  configure(studyInfo) {
+    const feature = this;
+    const { variation, isFirstRun } = studyInfo;
+    console.log(studyInfo);
+
+    this.tabsMonitor = new TabsMonitor();
+    this.tabsMonitor.configure(this);
     const sendPingIntervalMS = 1 * 24 * 60 * 60 * 1000;
     this.sendPingsScheduler(sendPingIntervalMS);
+
+    browser.autoplay.setPreferences(variation.name);
 
     // for test
     browser.browserAction.onClicked.addListener(() => {
       console.log("@@@@@ test send ping");
       browser.autoplay.sendTelemetry();
     });
-  }
-
-  configure(studyInfo) {
-    const feature = this;
-    const { variation, isFirstRun } = studyInfo;
-    console.log(studyInfo);
-    browser.autoplay.setPreferences(variation.name);
   }
 
   update(type, data) {
