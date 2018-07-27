@@ -3,8 +3,8 @@
 const gId = generateUUID();
 
 function generateUUID() {
-  return  Math.random().toString(36).substring(2, 15) +
-          Math.random().toString(36).substring(2, 15);
+  return Math.random().toString(36).substring(2, 15) +
+         Math.random().toString(36).substring(2, 15);
 }
 
 function isSupportURLProtocol(url) {
@@ -19,8 +19,8 @@ function getBaseDomainHash(url) {
   let baseDomain = getBaseDomain(url);
   let hash = 0, i, chr;
   if (baseDomain.length === 0) {
-    return hash
-  };
+    return hash;
+  }
 
   // use salted-hash
   baseDomain += gId;
@@ -49,19 +49,19 @@ class TabsMonitor {
 
   async handleAutoplayOccurred(tabId, url) {
     console.log(`handleAutoplayOccurred, url=${url}, id=${tabId}`);
-     if (!isSupportURLProtocol(url)) {
+    if (!isSupportURLProtocol(url)) {
       return;
     }
 
-    let hashURL = getBaseDomainHash(url);
+    const hashURL = getBaseDomainHash(url);
     this.feature.update("autoplayOccur", hashURL);
 
-    let permission = await browser.autoplay.getAutoplayPermission(tabId, url);
+    const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
     this.feature.update("promptChanged", {
-      pageId : hashURL,
-      timestamp : Date.now(),
-      rememberCheckbox : permission.rememberCheckbox,
-      allowAutoPlay : permission.allowAutoPlay,
+      pageId: hashURL,
+      timestamp: Date.now(),
+      rememberCheckbox: permission.rememberCheckbox,
+      allowAutoPlay: permission.allowAutoPlay,
     });
   }
 
@@ -83,14 +83,14 @@ class TabsMonitor {
 
   addSettingTabId(tabId) {
     this.settingTabIds.add(tabId);
-    if (this.settingTabIds.size == 1) {
+    if (this.settingTabIds.size === 1) {
       browser.autoplay.autoplaySettingChanged.addListener(this.settingListener);
     }
   }
 
   removeSettingTabId(tabId) {
     this.settingTabIds.delete(tabId);
-    if (this.settingTabIds.size == 0) {
+    if (this.settingTabIds.size === 0) {
       browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
     }
   }
@@ -110,7 +110,7 @@ class TabsMonitor {
       return;
     }
 
-    let url = changeInfo.url;
+    const url = changeInfo.url;
     console.log(`tab update : TabId: ${tabId}, URL changed to ${url}`);
     if (this.checkIfEneteringSettingPrivacyPage(tabId, url)) {
       return;
@@ -120,8 +120,7 @@ class TabsMonitor {
       return;
     }
 
-    let domain = getBaseDomainHash(url);
-    this.feature.update("visitPage", domain);
+    this.feature.update("visitPage", getBaseDomainHash(url));
   }
 
   handleRemoved(tabId, removeInfo) {
@@ -154,14 +153,14 @@ class Feature {
   }
 
   update(type, data) {
-    if (type == "visitPage" || type == "autoplayOccur") {
-       data = {pageId : data};
+    if (type === "visitPage" || type === "autoplayOccur") {
+      data = {pageId: data};
     }
     browser.autoplay.updatePingData(type, data);
   }
 
   sendPingsScheduler(interval) {
-     setInterval((interval) => {
+     setInterval(() => {
       browser.autoplay.sendTelemetry();
     }, interval);
   }

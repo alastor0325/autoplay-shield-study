@@ -90,7 +90,7 @@ const baseStudySetup = {
     {
       name: "deny-and-remember",
       weight: 1,
-    }
+    },
   ],
 
   // maximum time that the study should run, from the first run
