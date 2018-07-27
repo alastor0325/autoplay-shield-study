@@ -71,7 +71,10 @@ class TabsMonitor {
   clear() {
     browser.tabs.onUpdated.removeListener(this.tabUpdatedListener);
     browser.tabs.onRemoved.removeListener(this.tabRemovedListener);
-    browser.autoplay.audibleAutoplayOccurred.addListener(this.autoplayListener);
+    browser.autoplay.audibleAutoplayOccurred.removeListener(this.autoplayListener);
+    if (browser.autoplay.autoplaySettingChanged.hasListener(this.settingListener)) {
+      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
+    }
   }
 
   // async checkTabAutoplayStatus(tabId) {
@@ -99,25 +102,17 @@ class TabsMonitor {
     this.feature.update("settingChanged", data);
   }
 
-  startWaitingForAutoplaySettingChanged() {
-    browser.autoplay.autoplaySettingChanged.addListener(this.settingListener);
-  }
-
-  stoptWaitingForAutoplaySettingChanged() {
-    browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
-  }
-
   addSettingTabId(tabId) {
     this.settingTabIds.add(tabId);
     if (this.settingTabIds.size == 1) {
-      this.startWaitingForAutoplaySettingChanged();
+      browser.autoplay.autoplaySettingChanged.addListener(this.settingListener);
     }
   }
 
   removeSettingTabId(tabId) {
     this.settingTabIds.delete(tabId);
     if (this.settingTabIds.size == 0) {
-      this.stoptWaitingForAutoplaySettingChanged();
+      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
     }
   }
 
