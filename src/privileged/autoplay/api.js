@@ -39,6 +39,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     this.promptResponses = [];
     this.settingChanges = [];
     this.pingId = 0;
+    this.branch = "undefined";
   }
 
   async onShutdown(shutdownReason) {
@@ -78,11 +79,10 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   }
 
   async constructPayload(payloadType) {
-    // TODO : add other info : like ID, branch
     const payload = {
       id: this.pingId++,
       client_id: await getTelemetryId(),
-      branch: "none", // TODO
+      branch: this.branch,
       type: payloadType,
     };
     switch (payloadType) {
@@ -221,6 +221,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
         setPreferences: (variation) => {
           console.log(`variation=${variation}`);
+          this.branch = variation;
           let layout;
           switch (variation) {
             case "control":
