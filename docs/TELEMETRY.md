@@ -21,11 +21,7 @@
 
 ## Study-specific endings
 
-The STUDY SPECIFIC ENDINGS this study supports are:
-
-* "voted",
-* "notification-x"
-* "window-or-fx-closed"
+TBD
 
 ## `shield-study` pings (common to all shield-studies)
 
@@ -33,71 +29,165 @@ The STUDY SPECIFIC ENDINGS this study supports are:
 
 ## `shield-study-addon` pings, specific to THIS study.
 
-Events instrumented in this study:
+```
+{
+  // incremented integer, just to discriminate one blob from another
+  "id": 2,
 
-* UI
+  // unique client id
+  "client_id": "wdasdqewdj23dadasdasd",
 
-  * prompted (notification bar is shown)
+  // a label corresponding to which branch profile is in
+  // branches are as following, besides "control" branch, other branches have
+  // different default botton and check-boxed actions
+  // 1) "control" (enable autoplay)
+  // 2) "allow-and-notRemember" (
+  // 3) "deny-and-notRemember"
+  // 3) "allow-and-remember"
+  // 3) "deny-and-remember"
+  "branch": "control",
 
-* Interactions
-  * voted
+  // this is identifies what information will be in this blob can be one of
+  // 'prompt' or 'settings' or 'counts'
+  "type": "prompt",
 
-All interactions with the UI create sequences of Telemetry Pings.
+  // present when sending counts
+  "counters": {
+    // this is either total # domains or total pages visited
+    // it is running count till the data structure is sent back
+    // and then reset to 0
+    "totalPages": 200,
 
-All UI `shield-study` `study_state` sequences look like this:
+    // running total pages/domain names with auto-play media
+    "totalPagesAM": 20,
 
-* `enter => install => (one of: "voted" | "notification-x" | "window-or-fx-closed") => exit`.
+    // running total of # of autoplay media blocked (in control group, this
+    // means total # of autoplay media which might be blocked if disable
+    // autoplay )
+    "totalBlockedVideos": 20,
+  },
 
-## Example sequence for a 'voted => not sure' interaction
+
+  // [optional] this field must be present if type == 'prompt'
+  "promptResponse": {
+    // hash of top level domain which is salted-hashed
+    "pageid": "q3ewdwdad",
+
+    // timestamp of when page was visited.
+    "timestamp": 21231239123121,
+
+    // value of "remember this decision" checkbox
+    "rememberCheckbox": true,
+
+    // true if user clicked "Allow Autoplay", false if user clicked
+    // "Dont Allow".
+    "allowAutoPlay": true
+  },
+
+  // [optional] this field must be present if type == 'settings'
+  "settingsChanged":{
+    // timestamp of when setting was changed.
+    "timestamp": 21231239123121,
+
+    // [optional] if a global setting was changed
+    "globalSettings":{
+        // the states are “allow”, “block” or “ask”
+        "allowAutoPlay": “ask”
+    },
+
+    // [optional] when user manually changed the settings for a page.
+    "pageSpecific":{
+      // hash of top level domain which is salted-hashed
+      "pageid": "qwdqwdqded",
+
+      // the states are “allow”, “block” or "default"
+      "allowAutoPlay":“allow”
+    }
+  },
+}
+```
+
+## Example sequence for ping
 
 These are the `payload` fields from all pings in the `shield-study` and `shield-study-addon` buckets.
 
 ```
-// common fields
+// common fields for "shield-study"
 
-branch        up-to-expectations-1        // should describe Question text
-study_name    57-perception-shield-study
-addon_version 1.0.0
+branch        one of the branch described on above
+study_name    autoplay-shield-study@shield.mozilla.org
+addon_version 2.0.0
 version       3
 
-2017-10-09T14:16:18.042Z shield-study
+2018-08-01T14:16:18.042Z shield-study
 {
   "study_state": "enter"
 }
 
-2017-10-09T14:16:18.055Z shield-study
+2018-08-01T14:16:18.055Z shield-study
 {
   "study_state": "installed"
 }
 
-2017-10-09T14:16:18.066Z shield-study-addon
+2018-08-01T14:16:18.066Z shield-study-addon
 {
-  "attributes": {
-    "event": "prompted",
-    "promptType": "notificationBox-strings-1"
+  "id":0,
+  "client_id":"2ffc5ce3-1b70-974a-9dac-109ec96cf83c",
+  "branch":"none",
+  "type":"counts",
+  "counters": {
+    "totalPages":3,
+    "totalPagesAM":1,
+    "totalBlockedAudibleMedia":1,
   }
 }
 
-2017-10-09T16:29:44.109Z shield-study-addon
+2018-08-01T16:29:44.109Z shield-study-addon
 {
-  "attributes": {
-    "promptType": "notificationBox-strings-1",
-    "event": "answered",
-    "yesFirst": "1",
-    "score": "0",
-    "label": "not sure",
-    "branch": "up-to-expectations-1",
-    "message": "Is Firefox performing up to your expectations?"
-  }
+  "id":1,
+  "client_id":"2ffc5ce3-1b70-974a-9dac-109ec96cf83c",
+  "branch":"none",
+  "type":"prompt",
+  "promptResponse":[
+    {
+      "pageId":109466335,
+      "timestamp":1532567717284,
+      "rememberCheckbox":false,
+      "allowAutoPlay":false,
+    },
+  ]
 }
 
-2017-10-09T16:29:44.188Z shield-study
+2018-08-01T16:29:44.188Z shield-study-addon
 {
-  "study_state": "ended-neutral",
-  "study_state_fullname": "voted"
+  "id":2,
+  "client_id":"2ffc5ce3-1b70-974a-9dac-109ec96cf83c",
+  "branch":"none",
+  "type":"settings",
+  "settingsChanged":[
+    {
+      "timestamp":1532567696509,
+      "globalSettings":{
+          "allowAutoPlay":1,
+      },
+    },
+    {
+      "timestamp":1532567697598,
+      "globalSettings":{
+          "allowAutoPlay":2,
+      },
+    },
+    {
+      "timestamp":1532567700984,
+      "pageSpecific":{
+          "pageId":1780114461,
+          "allowAutoplay":true,
+      },
+    },
+  ]
 }
 
-2017-10-09T16:29:44.191Z shield-study
+2018-08-01T16:29:44.191Z shield-study
 {
   "study_state": "exit"
 }
