@@ -51,7 +51,7 @@
   "engines": {
     "node": ">=8.11.1"
   },
-  "homepage": "https://github.com/mozilla/shield-studies-addon-template",
+  "homepage": "https://github.com/alastor0325/autoplay-shield-study/",
   "keywords": [
     "firefox",
     "mozilla",
