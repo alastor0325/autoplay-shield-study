@@ -14,7 +14,6 @@
 * [Automated testing](#automated-testing)
   * [Unit tests](#unit-tests)
   * [Functional tests](#functional-tests)
-* [Directory Structure and Files](#directory-structure-and-files)
 * [General Shield Study Engineering](#general-shield-study-engineering)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -36,7 +35,7 @@ npm start
 npm run watch
 
 # run and reload on filechanges, with a variation/branch set by preference
-npm run watch -- --pref extensions.button-icon-preference_shield_mozilla_org.test.variationName=kittens
+npm run watch -- --pref extensions.autoplay-shield-study_shield_mozilla_org.test.variationName=${BRANCH_NAME}
 
 # run and reload on filechanges, with a specific Firefox installation
 npm run watch -- -f "/Applications/Firefox Nightly.app/Contents/MacOS/firefox-bin"
@@ -59,7 +58,7 @@ npm install -g npm
 Clone the repo:
 
 ```shell
-git clone https://github.com/mozilla/shield-studies-addon-template.git
+git clone https://github.com/alastor0325/autoplay-shield-study.git
 ```
 
 After cloning the repo, you can run the following commands from the top level directory, one after another:
@@ -162,64 +161,6 @@ Code at [/test/functional/](/test/functional/).
 Note: The study variation/branch during tests is overridden by a preference in the FIREFOX_PREFERENCES section of `test/utils.js`.
 
 The functional testing set-up is a minimal set of tests imported from <https://github.com/mozilla/share-button-study> which contains plenty of examples of functional tests relevant to Shield study add-ons.
-
-## Directory Structure and Files
-
-```
-├── .circleci             # Setup for .circle ci integration
-│   └── config.yml
-├── .eslintignore
-├── .eslintrc.js          # Linting configuration for mozilla, json etc
-├── .gitignore
-├── LICENSE
-├── README.md
-├── dist                  # Built zips (add-ons)
-│   ├── .gitignore
-│   └── button_icon_preference_study_shield_study_example_-2.0.0.zip
-├── docs
-│   ├── DEV.md
-│   ├── TELEMETRY.md      # Telemetry examples for this add-on
-│   ├── TESTPLAN.md       # Manual QA test plan
-│   └── WINDOWS_SETUP.md
-├── package-lock.json
-├── package.json
-├── src                   # Files that will go into the add-on
-│   ├── .eslintrc.json
-│   ├── background.js     # Background scripts, independent of web pages or browser windows
-│   ├── icon.png
-│   ├── icons             # Icons used in the example study (remove in your add-on)
-│   │   ├── LICENSE
-│   │   ├── isolatedcorndog.svg
-│   │   ├── kittens.svg
-│   │   ├── lizard.svg
-│   │   └── puppers.svg
-│   ├── manifest.json     # The only file that every extension using WebExtension APIs must contain
-│   └── privileged
-│       ├── Config.jsm    # Study-specific configuration regarding branches, eligibility, expiration etc
-│       ├── feature
-│       │   ├── api.js
-│       │   ├── jsm
-│       │   │   └── Feature.jsm   # Contains study-specific privileged code
-│       │   └── schema.json
-│       └── shieldUtils
-│           ├── api.js
-│           ├── jsm
-│           │   ├── StudyUtils.jsm              # (copied in during `prebuild` and `prewatch`)
-│           │   └── StudyUtilsBootstrap.jsm     # Code from legacy bootstrap.js to be assimilated into StudyUtils
-│           └── schema.json
-└── test                  # Automated tests `npm test` and circle
-│   ├── Dockerfile
-│   ├── docker_setup.sh
-│   ├── functional_tests.js
-│   ├── test_harness.js
-│   ├── test_printer.py
-│   └── utils.js
-└── web-ext-config.js     # Configuration options used by the `web-ext` command
-
->> tree -a -I 'node_modules|.git|.DS_Store'
-```
-
-This structure is set forth in [shield-studies-addon-template](https://github.com/mozilla/shield-studies-addon-template), with study-specific changes found mostly in `src/background.js`, `src/privileged/` and `src/studySetup.js`.
 
 ## General Shield Study Engineering
 
