@@ -33,81 +33,11 @@
 
 ## Expected User Experience / Functionality
 
-Users see:
-
-* an icon in the browser address bar (webExtension BrowserAction) with one of 3 images (Cat, Dog, Lizard)
-
-Clicking on the button:
-
-* changes the badge
-* sends telemetry
-
-ONCE ONLY users see:
-
-* a notification bar, introducing the featur
-* allowing them to opt out
-
-Icon will be the same every run.
-
-If the user clicks on the badge more than 3 times, it ends the study.
+TBD
 
 ### Do these tests
 
-1. UI APPEARANCE. OBSERVE a notification bar with these traits:
-
-   * Icon is 'heartbeat'
-   * Text is one of 8 selected "questions", such as: "Do you like Firefox?". These are listed in [/addon/Config.jsm](/addon/Config.jsm) as the variable `weightedVariations`.
-   * clickable buttons with labels 'yes | not sure | no' OR 'no | not sure | yes' (50/50 chance of each)
-   * an `x` button at the right that closes the notice.
-
-   Test fails IF:
-
-   * there is no bar.
-   * elements are not correct or are not displaye
-
-2. UI functionality: VOTE
-
-   Expect: Click on a 'vote' button (any of: `yes | not sure | no`) has all these effects
-
-   * notice closes
-   * add-on uninstalls
-   * no additional tabs open
-   * telemetry pings are 'correct' with this SPECIFIC `study_state` as the ending
-
-     * ending is `voted`
-     * 'vote' is correct.
-
-3. UI functionality: 'X' button
-
-   Click on the 'x' button.
-
-   * notice closes
-   * add-on uninstalls
-   * no additional tabs open
-   * telemetry pings are 'correct' with this SPECIFIC ending
-
-     * ending is `notification-x`
-
-4. UI functionality 'close window'
-
-   1. Open a 2nd Firefox window.
-   2. Close the initial window.
-
-   Then observe:
-
-   * notice closes
-   * add-on uninstalls
-   * no additional tabs open
-   * telemetry pings are 'correct' with this SPECIFIC ending
-
-     * ending is `window-or-fx-closed`
-
-5. UI functionality 'too-popular'
-
-   * Click on the web extension's icon three times
-   * Verify that the study ends
-   * Verify that sent Telemetry is correct
-   * Verify that the user is sent to the URL specified in `addon/Config.jsm` under `endings -> too-popular`.
+TBD
 
 ### Design
 
