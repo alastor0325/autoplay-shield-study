@@ -3,12 +3,6 @@
     "namespace": "autoplay",
     "description": "some helper functions for autoplay shield-study extension",
     "apiVersion": 5,
-    "properties": {
-      "testValue": {
-        "value": 24,
-        "description": "Description of my property here."
-      }
-    },
     "types": [
       {
         "id": "JSONFormat",
