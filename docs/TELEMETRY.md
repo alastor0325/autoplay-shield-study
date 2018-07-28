@@ -41,10 +41,10 @@ TBD
   // branches are as following, besides "control" branch, other branches have
   // different default botton and check-boxed actions
   // 1) "control" (enable autoplay)
-  // 2) "allow-and-notRemember" (
+  // 2) "allow-and-notRemember"
   // 3) "deny-and-notRemember"
-  // 3) "allow-and-remember"
-  // 3) "deny-and-remember"
+  // 4) "allow-and-remember"
+  // 5) "deny-and-remember"
   "branch": "control",
 
   // this is identifies what information will be in this blob can be one of
@@ -68,7 +68,7 @@ TBD
   },
 
 
-  // [optional] this field must be present if type == 'prompt'
+  // *[optional]* this field must be present if type == 'prompt'
   "promptResponse": {
     // hash of top level domain which is salted-hashed
     "pageid": "q3ewdwdad",
@@ -84,18 +84,18 @@ TBD
     "allowAutoPlay": true
   },
 
-  // [optional] this field must be present if type == 'settings'
+  // *[optional]* this field must be present if type == 'settings'
   "settingsChanged":{
     // timestamp of when setting was changed.
     "timestamp": 21231239123121,
 
-    // [optional] if a global setting was changed
+    // *[optional]* if a global setting was changed
     "globalSettings":{
         // the states are “allow”, “block” or “ask”
         "allowAutoPlay": “ask”
     },
 
-    // [optional] when user manually changed the settings for a page.
+    // *[optional]* when user manually changed the settings for a page.
     "pageSpecific":{
       // hash of top level domain which is salted-hashed
       "pageid": "qwdqwdqded",
