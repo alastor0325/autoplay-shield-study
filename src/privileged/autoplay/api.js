@@ -1,13 +1,19 @@
 "use strict";
 
+ChromeUtils.import("resource:///modules/PermissionUI.jsm");
 ChromeUtils.import("resource:///modules/SitePermissions.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
 ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
+ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
 
 const CID = ChromeUtils.import("resource://gre/modules/ClientID.jsm", {});
 const { EventManager } = ExtensionCommon;
+
+XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
+  return Services.strings.createBundle("chrome://browser/locale/browser.properties");
+});
 
 function _once(target, name) {
   const p = new Promise(function(resolve, reject) {
@@ -28,6 +34,54 @@ function getTelemetryId() {
     return CID.ClientIDImpl._doLoadClientID();
   }
   return id;
+}
+
+function setAutoplayPromptLayout(variation) {
+  console.log(`setAutoplayPromptLayout, variation=${variation}`);
+  if (!variation || variation === "control") {
+    return;
+  }
+
+  Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "popupOptions", {
+    get: function () {
+      let checkbox = {
+        show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal) &&
+          !this.principal.URI.schemeIs("file")
+      };
+      if (checkbox.show) {
+        if (variation === "allow-and-remember" ||
+            variation === "deny-and-remember") {
+          checkbox.checked = true;
+        }
+        checkbox.label = gBrowserBundle.GetStringFromName("autoplay.remember");
+      }
+      return {
+        checkbox,
+        displayURI: false,
+        name: this.principal.URI.hostPort,
+      };
+    }
+  });
+
+  Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "promptActions", {
+    get: function () {
+      let allowAction = {
+        label: gBrowserBundle.GetStringFromName("autoplay.Allow2.label"),
+        accessKey: gBrowserBundle.GetStringFromName("autoplay.Allow2.accesskey"),
+        action: Ci.nsIPermissionManager.ALLOW_ACTION,
+      };
+      let denyAction = {
+        label: gBrowserBundle.GetStringFromName("autoplay.DontAllow.label"),
+        accessKey: gBrowserBundle.GetStringFromName("autoplay.DontAllow.accesskey"),
+        action: Ci.nsIPermissionManager.DENY_ACTION,
+      };
+      if (variation === "allow-and-notRemember" ||
+          variation === "allow-and-remember") {
+        return [allowAction, denyAction];
+      }
+      return [denyAction, allowAction];
+    }
+  });
 }
 
 this.autoplay = class AutoplayAPI extends ExtensionAPI {
@@ -220,33 +274,13 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         }).api(),
 
         setPreferences: (variation) => {
-          console.log(`variation=${variation}`);
           this.branch = variation;
-          let layout;
-          switch (variation) {
-            case "control":
-            case "allow-and-notRemember":
-              layout = 0;
-              break;
-            case "deny-and-notRemember":
-              layout = 1;
-              break;
-            case "allow-and-remember":
-              layout = 2;
-              break;
-            case "deny-and-remember":
-              layout = 3;
-              break;
-            default:
-              console.log("### Error, undefined variation.");
-              break;
-          }
           Preferences.set({
             "media.autoplay.default": variation === "control" ? 0 : 2,
             "media.autoplay.enabled.user-gestures-needed": true,
             "media.autoplay.ask-permission": true,
-            "media.autoplay.prompt-layout": layout,
           });
+          setAutoplayPromptLayout(variation);
         },
 
         getAutoplayPermission: async(tabId, url) => {
