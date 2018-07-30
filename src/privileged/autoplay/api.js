@@ -99,6 +99,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   async onShutdown(shutdownReason) {
     console.log(`onShutdown, reason=${shutdownReason}`);
     return new Promise(async(resolve) => {
+      // TODO : clean-up
       await this.sendTelemetryPings();
       resolve();
     });
@@ -129,13 +130,14 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     console.log(data);
     const telOptions = { addClientId: true, addEnvironment: true };
     // TODO : verifty JSON
+    // TODO : use custom schema name
     return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
   }
 
   async constructPayload(payloadType) {
     const payload = {
       id: this.pingId++,
-      client_id: await getTelemetryId(),
+      clientId: await getTelemetryId(),
       branch: this.branch,
       type: payloadType,
     };
