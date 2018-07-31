@@ -21,15 +21,6 @@
  *    - onReady: configure the feature to match the `variation` study selected
  *    - or, if we got an `onEndStudy` cleanup and uninstall.
  *
- *  During the feature:
- *    - `sendTelemetry` to send pings
- *    - `endStudy` to force an ending (for positive or negative reasons!)
- *
- *  Interesting things to try next:
- *  - `browser.study.validateJSON` your pings before sending
- *  - `endStudy` different endings in response to user action
- *  - force an override of setup.testing to choose branches.
- *
  */
 
 class StudyLifeCycleHandler {

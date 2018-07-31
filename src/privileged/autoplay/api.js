@@ -129,9 +129,8 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     console.log("submitTelemetryPing to server");
     console.log(data);
     const telOptions = { addClientId: true, addEnvironment: true };
-    // TODO : verifty JSON
     // TODO : use custom schema name
-    return TelemetryController.submitExternalPing("shield-study-addon", data, telOptions);
+    return TelemetryController.submitExternalPing("block-autoplay", data, telOptions);
   }
 
   async constructPayload(payloadType) {
