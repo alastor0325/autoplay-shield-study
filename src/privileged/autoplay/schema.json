@@ -63,7 +63,7 @@
         "name": "getAutoplayPermission",
         "type": "function",
         "async": true,
-        "description": "...TODO",
+        "description": "this method is used to know what are options user clicked on the autoplay doorhanger",
         "parameters": [
           {
             "name": "tabId",
