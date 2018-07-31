@@ -1,6 +1,6 @@
 {
   "name": "autoplay shield-study extension",
-  "description": "collect user behavior for our blocking autoplay policy.",
+  "description": "It's a Mozilla shield-study extension, which is used to collect related information about the blocking autoplay. We would use these information to improve the user experience of blocking autoplay policy.",
   "version": "2.0.0",
   "manifest_version": 2,
   "applications": {
