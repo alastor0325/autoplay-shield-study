@@ -34,13 +34,18 @@
 
 ### User interface changed
 
-We have five different testing branches, (1) control (2) allow-and-notRemember 
-(3) deny-and-notRemember (4) allow-and-remember (5) deny-and-remember
+We have five different testing branches, 
+1. `control` 
+2. `allow-and-notRemember` 
+3. `deny-and-notRemember` 
+4. `allow-and-remember` 
+5. `deny-and-remember`
 
 In control branch, we would enable autoplay by default. It won't have any interface changed.
 
 In other 4 branches, we would show the doorhanger to ask user whether they want to allow the site autoplay. Each testing branch has different options layout. 
-Eg. allow-and-notRemember : default option of the doorhanger would be "Allow autoplay" and the checkbox 
+
+Eg. In the branch `allow-and-notRemember`, the default option of the doorhanger would be "Allow autoplay" and the checkbox 
 "remember this decision" is not checked.
 
 ### Functionality
