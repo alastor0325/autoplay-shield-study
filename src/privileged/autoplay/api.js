@@ -99,7 +99,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   async onShutdown(shutdownReason) {
     console.log(`onShutdown, reason=${shutdownReason}`);
     return new Promise(async(resolve) => {
-      // TODO : clean-up
       await this.sendTelemetryPings();
       resolve();
     });
