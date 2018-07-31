@@ -144,12 +144,6 @@ class Feature {
     this.sendPingsScheduler(sendPingIntervalMS);
 
     browser.autoplay.setPreferences(variation.name);
-
-    // for test
-    browser.browserAction.onClicked.addListener(() => {
-      console.log("@@@@@ test send ping");
-      browser.autoplay.sendTelemetry();
-    });
   }
 
   update(type, data) {
