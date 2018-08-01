@@ -7,6 +7,22 @@ function generateUUID() {
          Math.random().toString(36).substring(2, 15);
 }
 
+// Hash function from https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+async function sha256(message) {
+  // encode as UTF-8
+  const msgBuffer = new TextEncoder('utf-8').encode(message);
+
+  // hash the message
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+
+  // convert ArrayBuffer to Array
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+  // convert bytes to hex string
+  const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+  return hashHex;
+}
+
 function isSupportURLProtocol(url) {
   return !!(url.match(/^(http(s?):\/\/)/im));
 }
@@ -15,20 +31,13 @@ function getBaseDomain(url) {
   return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
 }
 
-function getBaseDomainHash(url) {
-  let baseDomain = getBaseDomain(url);
-  let hash = 0, i, chr;
+async function getBaseDomainHash(url) {
+  const baseDomain = getBaseDomain(url);
   if (baseDomain.length === 0) {
     return hash;
   }
 
-  // use salted-hash
-  baseDomain += gId;
-  for (i = 0; i < baseDomain.length; i++) {
-    chr   = baseDomain.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
+  const hash = await sha256(baseDomain + gId);
   return hash;
 }
 
@@ -53,7 +62,7 @@ class TabsMonitor {
       return;
     }
 
-    const hashURL = getBaseDomainHash(url);
+    const hashURL = await getBaseDomainHash(url);
     this.feature.update("autoplayOccur", hashURL);
 
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
@@ -74,9 +83,9 @@ class TabsMonitor {
     }
   }
 
-  autoplaySettingChanged(data) {
+  async autoplaySettingChanged(data) {
     if (data.pageSpecific) {
-      data.pageSpecific.pageId = getBaseDomainHash(data.pageSpecific.pageId);
+      data.pageSpecific.pageId = await getBaseDomainHash(data.pageSpecific.pageId);
     }
     this.feature.update("settingChanged", data);
   }
@@ -105,7 +114,7 @@ class TabsMonitor {
     return false;
   }
 
-  handleUpdated(tabId, changeInfo, tabInfo) {
+  async handleUpdated(tabId, changeInfo, tabInfo) {
     if (!changeInfo.url) {
       return;
     }
@@ -120,7 +129,8 @@ class TabsMonitor {
       return;
     }
 
-    this.feature.update("visitPage", getBaseDomainHash(url));
+    const pageId = await getBaseDomainHash(url);
+    this.feature.update("visitPage", pageId);
   }
 
   handleRemoved(tabId, removeInfo) {
