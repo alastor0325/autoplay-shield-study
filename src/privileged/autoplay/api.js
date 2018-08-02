@@ -44,7 +44,7 @@ function setAutoplayPromptLayout(variation) {
 
   Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "popupOptions", {
     get: function () {
-      let checkbox = {
+      const checkbox = {
         show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal) &&
           !this.principal.URI.schemeIs("file")
       };
@@ -65,12 +65,12 @@ function setAutoplayPromptLayout(variation) {
 
   Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "promptActions", {
     get: function () {
-      let allowAction = {
+      const allowAction = {
         label: gBrowserBundle.GetStringFromName("autoplay.Allow2.label"),
         accessKey: gBrowserBundle.GetStringFromName("autoplay.Allow2.accesskey"),
         action: Ci.nsIPermissionManager.ALLOW_ACTION,
       };
-      let denyAction = {
+      const denyAction = {
         label: gBrowserBundle.GetStringFromName("autoplay.DontAllow.label"),
         accessKey: gBrowserBundle.GetStringFromName("autoplay.DontAllow.accesskey"),
         action: Ci.nsIPermissionManager.DENY_ACTION,
