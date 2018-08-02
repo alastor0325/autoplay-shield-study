@@ -44,16 +44,27 @@ async function getBaseDomainHash(url) {
 class TabsMonitor {
   configure(feature) {
     this.feature = feature;
-    this.settingTabIds = new Set();
-    this.privacyPageURL = "about:preferences#privacy";
     this.settingListener = this.autoplaySettingChanged.bind(this);
     this.autoplayListener = this.handleAutoplayOccurred.bind(this);
     this.tabUpdatedListener = this.handleUpdated.bind(this);
     this.tabRemovedListener = this.handleRemoved.bind(this);
+    this.tabActivatedListener = this.handleActivated.bind(this);
+    this.activatedTabId = 0;
 
+    browser.tabs.onActivated.addListener(this.tabActivatedListener);
     browser.tabs.onUpdated.addListener(this.tabUpdatedListener);
     browser.tabs.onRemoved.addListener(this.tabRemovedListener);
     browser.autoplay.audibleAutoplayOccurred.addListener(this.autoplayListener);
+  }
+
+  clear() {
+    browser.tabs.onUpdated.removeListener(this.tabUpdatedListener);
+    browser.tabs.onRemoved.removeListener(this.tabRemovedListener);
+    browser.tabs.onActivated.removeListener(this.tabActivatedListener);
+    browser.autoplay.audibleAutoplayOccurred.removeListener(this.autoplayListener);
+    if (browser.autoplay.autoplaySettingChanged.hasListener(this.settingListener)) {
+      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
+    }
   }
 
   async handleAutoplayOccurred(tabId, url) {
@@ -74,15 +85,6 @@ class TabsMonitor {
     });
   }
 
-  clear() {
-    browser.tabs.onUpdated.removeListener(this.tabUpdatedListener);
-    browser.tabs.onRemoved.removeListener(this.tabRemovedListener);
-    browser.autoplay.audibleAutoplayOccurred.removeListener(this.autoplayListener);
-    if (browser.autoplay.autoplaySettingChanged.hasListener(this.settingListener)) {
-      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
-    }
-  }
-
   async autoplaySettingChanged(data) {
     if (data.pageSpecific) {
       data.pageSpecific.pageId = await getBaseDomainHash(data.pageSpecific.pageId);
@@ -90,28 +92,32 @@ class TabsMonitor {
     this.feature.update("settingChanged", data);
   }
 
-  addSettingTabId(tabId) {
-    this.settingTabIds.add(tabId);
-    if (this.settingTabIds.size === 1) {
+  maybeUpdateSettingListener(tabId, url) {
+    if (tabId !== this.activatedTabId) {
+      return;
+    }
+
+    // The API `browser.autoplay.autoplaySettingChanged` listens the notification
+    // `perm-changed`, but this notification might happend from different way,
+    // eg. doorhanger, chrome js ..e.t.c. However, we only want to know the
+    // changed happened in the `about:preferences` page, so register the listener
+    // only when we're in the privacy page of `about:preferences` which is used
+    // to change autoplay preferece.
+    const isPrivacyPage = url === "about:preferences#privacy";
+    const hasRegisteredListener = browser.autoplay.autoplaySettingChanged.hasListener(this.settingListener);
+    if (!isPrivacyPage && hasRegisteredListener) {
+      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
+    } else if (isPrivacyPage && !hasRegisteredListener) {
+      // only register listener when `page is in foreground` and `page is a
+      // `privacy page in `about:preferences`.
       browser.autoplay.autoplaySettingChanged.addListener(this.settingListener);
     }
   }
 
-  removeSettingTabId(tabId) {
-    this.settingTabIds.delete(tabId);
-    if (this.settingTabIds.size === 0) {
-      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
-    }
-  }
-
-  checkIfEneteringSettingPrivacyPage(tabId, url) {
-    if (url === this.privacyPageURL && !this.settingTabIds.has(tabId)) {
-      this.addSettingTabId(tabId);
-      return true;
-    } else if (this.settingTabIds.has(tabId) && url !== this.privacyPageURL) {
-      this.removeSettingTabId(tabId);
-    }
-    return false;
+  async handleActivated(activeInfo) {
+    const tab = await browser.tabs.get(activeInfo.tabId);
+    this.activatedTabId = tab.id;
+    this.maybeUpdateSettingListener(tab.id, tab.url);
   }
 
   async handleUpdated(tabId, changeInfo, tabInfo) {
@@ -121,10 +127,7 @@ class TabsMonitor {
 
     const url = changeInfo.url;
     console.log(`tab update : TabId: ${tabId}, URL changed to ${url}`);
-    if (this.checkIfEneteringSettingPrivacyPage(tabId, url)) {
-      return;
-    }
-
+    this.maybeUpdateSettingListener(tabId, url);
     if (!isSupportURLProtocol(url)) {
       return;
     }
@@ -134,8 +137,9 @@ class TabsMonitor {
   }
 
   handleRemoved(tabId, removeInfo) {
-    if (this.settingTabIds.has(tabId)) {
-      this.removeSettingTabId(tabId);
+    if (this.activatedTabId === tabId &&
+        browser.autoplay.autoplaySettingChanged.hasListener(this.settingListener)) {
+      browser.autoplay.autoplaySettingChanged.removeListener(this.settingListener);
     }
   }
 }
