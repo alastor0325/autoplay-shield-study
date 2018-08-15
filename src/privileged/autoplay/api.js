@@ -127,7 +127,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   submitTelemetryPing(data) {
     console.log("submitTelemetryPing to server");
     console.log(data);
-    const telOptions = { addClientId: true, addEnvironment: true };
+    const telOptions = { addEnvironment: true };
     return TelemetryController.submitExternalPing("block-autoplay", data, telOptions);
   }
 
@@ -179,7 +179,9 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
     const count = accumulatedCount - this.blockedAudibleAutoplayCount;
     if (count < 0) {
-      console.log("### Error : count should not be negative.");
+      console.log("ERROR : count is negative.");
+      this.blockedAudibleAutoplayCount = accumulatedCount;
+      return 0;
     }
     this.blockedAudibleAutoplayCount = count;
     return count;
@@ -213,15 +215,8 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             const domain = subject.principal.baseDomain;
             let autoplayState;
 
-            const PERM_ACTION = {
-              UNKNOWN_ACTION: 0,
-              ALLOW_ACTION: 1,
-              DENY_ACTION: 2,
-              PROMPT_ACTION: 3,
-            };
-
             if (data === "added") {
-              autoplayState = (subject.capability === PERM_ACTION.ALLOW_ACTION) ?
+              autoplayState = (subject.capability === Ci.nsIPermissionManager.ALLOW_ACTION) ?
                 "allow" : "block";
             } else if (data === "deleted") {
               autoplayState = "default";
@@ -263,7 +258,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         audibleAutoplayOccurred: new EventManager(context, "autoplay.audibleAutoplayOccurred", fire => {
           const autoplayObs = (subject, topic, data) => {
             fire.async(tabManager.getWrapper(subject).id,
-                       subject.linkedBrowser.currentURI.spec.toString());
+                       subject.linkedBrowser.currentURI.spec);
           };
           Services.obs.addObserver(autoplayObs, "AudibleAutoplayMediaOccurred");
 

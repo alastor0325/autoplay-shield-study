@@ -1,8 +1,8 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "(feature)" }]*/
 
-const gId = generateUUID();
+var hostNamesMap = new Map();
 
-function generateUUID() {
+function generateRandomString() {
   return Math.random().toString(36).substring(2, 15) +
          Math.random().toString(36).substring(2, 15);
 }
@@ -23,21 +23,20 @@ async function sha256(message) {
   return hashHex;
 }
 
-function isSupportURLProtocol(url) {
+function isSupportedURLProtocol(url) {
   return !!(url.match(/^(http(s?):\/\/)/im));
 }
 
-function getBaseDomain(url) {
+function getHostName(url) {
   return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
 }
 
-async function getBaseDomainHash(url) {
-  const baseDomain = getBaseDomain(url);
-  if (baseDomain.length === 0) {
-    return hash;
+async function getHostNameSaltedHash(url) {
+  const hostName = getHostName(url);
+  if (!hostNamesMap.has(hostName)) {
+    hostNamesMap.set(hostName, generateRandomString());
   }
-
-  const hash = await sha256(baseDomain + gId);
+  const hash = await sha256(hostName + hostNamesMap.get(hostName));
   return hash;
 }
 
@@ -69,11 +68,11 @@ class TabsMonitor {
 
   async handleAutoplayOccurred(tabId, url) {
     console.log(`handleAutoplayOccurred, url=${url}, id=${tabId}`);
-    if (!isSupportURLProtocol(url)) {
+    if (!isSupportedURLProtocol(url)) {
       return;
     }
 
-    const hashURL = await getBaseDomainHash(url);
+    const hashURL = await getHostNameSaltedHash(url);
     this.feature.update("autoplayOccur", hashURL);
 
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
@@ -87,7 +86,7 @@ class TabsMonitor {
 
   async autoplaySettingChanged(data) {
     if (data.pageSpecific) {
-      data.pageSpecific.pageId = await getBaseDomainHash(data.pageSpecific.pageId);
+      data.pageSpecific.pageId = await getHostNameSaltedHash(data.pageSpecific.pageId);
     }
     this.feature.update("settingChanged", data);
   }
@@ -128,11 +127,11 @@ class TabsMonitor {
     const url = changeInfo.url;
     console.log(`tab update : TabId: ${tabId}, URL changed to ${url}`);
     this.maybeUpdateSettingListener(tabId, url);
-    if (!isSupportURLProtocol(url)) {
+    if (!isSupportedURLProtocol(url)) {
       return;
     }
 
-    const pageId = await getBaseDomainHash(url);
+    const pageId = await getHostNameSaltedHash(url);
     this.feature.update("visitPage", pageId);
   }
 
@@ -155,7 +154,10 @@ class Feature {
     this.tabsMonitor = new TabsMonitor();
     this.tabsMonitor.configure(this);
     const sendPingIntervalMS = 1 * 24 * 60 * 60 * 1000;
-    this.sendPingsScheduler(sendPingIntervalMS);
+
+    this.sendPingsScheduler = setInterval(() => {
+      browser.autoplay.sendTelemetry();
+    }, sendPingIntervalMS);
 
     browser.autoplay.setPreferences(variation.name);
   }
@@ -167,18 +169,15 @@ class Feature {
     browser.autoplay.updatePingData(type, data);
   }
 
-  sendPingsScheduler(interval) {
-    setInterval(() => {
-      browser.autoplay.sendTelemetry();
-    }, interval);
-  }
-
   /**
    * Called at end of study, and if the user disables the study or it gets
    * uninstalled by other means.
    */
   async cleanup() {
     this.tabsMonitor.clear();
+    // restoring to the default option.
+    browser.autoplay.setPreferences("allow-and-remember");
+    clearInterval(this.sendPingsScheduler);
   }
 }
 
