@@ -31,7 +31,7 @@ async function getHostNameId(url) {
 }
 
 class TabsMonitor {
-  configure(feature) {
+  configure(feature, branch) {
     this.feature = feature;
     this.settingListener = this.autoplaySettingChanged.bind(this);
     this.autoplayListener = this.handleAutoplayOccurred.bind(this);
@@ -39,6 +39,7 @@ class TabsMonitor {
     this.tabRemovedListener = this.handleRemoved.bind(this);
     this.tabActivatedListener = this.handleActivated.bind(this);
     this.activatedTabId = 0;
+    this.branch = branch;
 
     browser.tabs.onActivated.addListener(this.tabActivatedListener);
     browser.tabs.onUpdated.addListener(this.tabUpdatedListener);
@@ -65,6 +66,11 @@ class TabsMonitor {
     const hashURL = await getHostNameId(url);
     this.feature.update("autoplayOccur", hashURL);
 
+    // control group doesn't need to collect prompt changed data.
+    if (this.branch === "control") {
+      return;
+    }
+
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
     this.feature.update("promptChanged", {
       pageId: hashURL,
@@ -83,6 +89,11 @@ class TabsMonitor {
 
   maybeUpdateSettingListener(tabId, url) {
     if (tabId !== this.activatedTabId) {
+      return;
+    }
+
+    // control group doesn't need to collect setting changed data.
+    if (this.branch === "control") {
       return;
     }
 
@@ -142,7 +153,7 @@ class Feature {
     console.log(studyInfo);
 
     this.tabsMonitor = new TabsMonitor();
-    this.tabsMonitor.configure(this);
+    this.tabsMonitor.configure(this, variation.name);
     const sendPingIntervalMS = 1 * 24 * 60 * 60 * 1000;
 
     this.sendPingsScheduler = setInterval(() => {
