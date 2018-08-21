@@ -129,39 +129,41 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   }
 
   async constructPayload(payloadType) {
-    const payload = {
+    const ping = {
       id: this.pingId++,
       clientId: await getTelemetryId(),
       branch: this.branch,
-      type: payloadType,
+    };
+    ping.payload = {
+      type : payloadType
     };
     switch (payloadType) {
       case "counts":
-        payload.counters = {
+        ping.payload.counters = {
           totalPages: this.domainUserVisited.size,
           totalPagesAM: this.domainWithAutoplay.size,
           totalBlockedAudibleMedia: this.getBlockedAudibleMediaCount(),
         };
         break;
       case "prompt":
-        payload.promptResponse = [];
+        ping.payload.promptResponse = [];
         while (this.promptResponses.length > 0) {
           const data = this.promptResponses.shift();
-          payload.promptResponse.push(data);
+          ping.payload.promptResponse.push(data);
         }
         break;
       case "settings":
-        payload.settingsChanged = [];
+        ping.payload.settingsChanged = [];
         while (this.settingChanges.length > 0) {
           const data = this.settingChanges.shift();
-          payload.settingsChanged.push(data);
+          ping.payload.settingsChanged.push(data);
         }
         break;
       default:
         console.log("Error : incorrect payload type");
         break;
     }
-    return payload;
+    return ping;
   }
 
   getBlockedAudibleMediaCount() {
