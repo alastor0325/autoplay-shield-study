@@ -3,6 +3,7 @@
 ChromeUtils.import("resource:///modules/PermissionUI.jsm");
 ChromeUtils.import("resource:///modules/SitePermissions.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionStorage.jsm");
 ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
 ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -22,10 +23,6 @@ function _once(target, name) {
     }, {once: true});
   });
   return p;
-}
-
-function errorHandler(err) {
-  console.log(`### Error=${err}`);
 }
 
 function getTelemetryId() {
@@ -108,17 +105,17 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
     let payload;
     if (this.domainUserVisited.size > 0) {
       payload = await this.constructPayload("counts");
-      await this.submitTelemetryPing(payload).catch(errorHandler);
+      await this.submitTelemetryPing(payload).catch(Cu.reportError);
     }
 
     if (this.promptResponses.length > 0) {
       payload = await this.constructPayload("prompt");
-      await this.submitTelemetryPing(payload).catch(errorHandler);
+      await this.submitTelemetryPing(payload).catch(Cu.reportError);
     }
 
     if (this.settingChanges.length > 0) {
       payload = await this.constructPayload("settings");
-      await this.submitTelemetryPing(payload).catch(errorHandler);
+      await this.submitTelemetryPing(payload).catch(Cu.reportError);
     }
 
     this.reset();
@@ -267,14 +264,48 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           };
         }).api(),
 
-        setPreferences: (variation) => {
+        setPreferences: async(variation) => {
           this.branch = variation;
+
+          let cacheDefaultSetting =
+            await ExtensionStorage.get(extension.id, "media.autoplay.default").catch(Cu.reportError);
+          if (!cacheDefaultSetting.hasOwnProperty("media.autoplay.default")) {
+            // Save current preferences setting and recover preferences when study ends.
+            const defaultSetting = {
+              "media.autoplay.default" : Preferences.get("media.autoplay.default"),
+              "media.autoplay.enabled.user-gestures-needed": Preferences.get("media.autoplay.enabled.user-gestures-needed"),
+              "media.autoplay.ask-permission": Preferences.get("media.autoplay.ask-permission"),
+            }
+            await ExtensionStorage.set(extension.id, defaultSetting).catch(Cu.reportError);
+          }
+
           Preferences.set({
             "media.autoplay.default": variation === "control" ? 0 : 2,
             "media.autoplay.enabled.user-gestures-needed": true,
             "media.autoplay.ask-permission": true,
           });
           setAutoplayPromptLayout(variation);
+        },
+
+        clearPreferences: async() => {
+          function getDefaultPreference(pref) {
+            return ExtensionStorage.get(extension.id, pref).catch(Cu.reportError);
+          }
+
+          const defaultSetting = [
+            await getDefaultPreference("media.autoplay.default"),
+            await getDefaultPreference("media.autoplay.enabled.user-gestures-needed"),
+            await getDefaultPreference("media.autoplay.ask-permission"),
+          ];
+
+          let setting = {};
+          for (let item of defaultSetting) {
+            for (let key in item) {
+              setting[key] = item[key];
+            }
+          }
+          Preferences.set(setting);
+          setAutoplayPromptLayout("allow-and-remember");
         },
 
         getAutoplayPermission: async(tabId, url) => {
@@ -297,7 +328,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
           await _once(notification.panel, "popupshown");
 
-          const status = await getPromptStatus().catch(errorHandler);
+          const status = await getPromptStatus().catch(Cu.reportError);
           return status;
         },
 

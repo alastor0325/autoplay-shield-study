@@ -60,6 +60,19 @@
         ]
       },
       {
+        "name": "clearPreferences",
+        "type": "function",
+        "async": false,
+        "description": "clean up testing preferences",
+        "parameters": [
+          {
+            "name": "variation",
+            "type": "string",
+            "description": "use to clear all testing preferences and recover preferences to default."
+          }
+        ]
+      },
+      {
         "name": "getAutoplayPermission",
         "type": "function",
         "async": true,

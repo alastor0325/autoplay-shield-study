@@ -1,26 +1,8 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "(feature)" }]*/
 
-var hostNamesMap = new Map();
-
 function generateRandomString() {
   return Math.random().toString(36).substring(2, 15) +
          Math.random().toString(36).substring(2, 15);
-}
-
-// Hash function from https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
-async function sha256(message) {
-  // encode as UTF-8
-  const msgBuffer = new TextEncoder("utf-8").encode(message);
-
-  // hash the message
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-
-  // convert ArrayBuffer to Array
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-  // convert bytes to hex string
-  const hashHex = hashArray.map(b => ("00" + b.toString(16)).slice(-2)).join('');
-  return hashHex;
 }
 
 function isSupportedURLProtocol(url) {
@@ -31,13 +13,21 @@ function getHostName(url) {
   return url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n]+)/im)[1];
 }
 
-async function getHostNameSaltedHash(url) {
+async function getHostNameId(url) {
   const hostName = getHostName(url);
-  if (!hostNamesMap.has(hostName)) {
-    hostNamesMap.set(hostName, generateRandomString());
+  const gettingItem = await browser.storage.local.get(hostName).catch((e) => {
+    throw "Error : can not get host id from local storage";
+  });
+
+  if (!gettingItem.hasOwnProperty(hostName)) {
+    const randomId = generateRandomString();
+    await browser.storage.local.set({ [hostName] : randomId }).catch((e) => {
+      throw "Error : can not set host id to local storage";
+    });
+    return randomId;
+  } else {
+    return gettingItem[hostName];
   }
-  const hash = await sha256(hostName + hostNamesMap.get(hostName));
-  return hash;
 }
 
 class TabsMonitor {
@@ -72,7 +62,7 @@ class TabsMonitor {
       return;
     }
 
-    const hashURL = await getHostNameSaltedHash(url);
+    const hashURL = await getHostNameId(url);
     this.feature.update("autoplayOccur", hashURL);
 
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
@@ -86,7 +76,7 @@ class TabsMonitor {
 
   async autoplaySettingChanged(data) {
     if (data.pageSpecific) {
-      data.pageSpecific.pageId = await getHostNameSaltedHash(data.pageSpecific.pageId);
+      data.pageSpecific.pageId = await getHostNameId(data.pageSpecific.pageId);
     }
     this.feature.update("settingChanged", data);
   }
@@ -131,7 +121,7 @@ class TabsMonitor {
       return;
     }
 
-    const pageId = await getHostNameSaltedHash(url);
+    const pageId = await getHostNameId(url);
     this.feature.update("visitPage", pageId);
   }
 
@@ -176,7 +166,7 @@ class Feature {
   async cleanup() {
     this.tabsMonitor.clear();
     // restoring to the default option.
-    browser.autoplay.setPreferences("allow-and-remember");
+    browser.autoplay.clearPreferences();
     clearInterval(this.sendPingsScheduler);
   }
 }
