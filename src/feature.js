@@ -58,7 +58,6 @@ class TabsMonitor {
   }
 
   async handleAutoplayOccurred(tabId, url) {
-    console.log(`handleAutoplayOccurred, url=${url}, id=${tabId}`);
     if (!isSupportedURLProtocol(url)) {
       return;
     }
@@ -126,7 +125,6 @@ class TabsMonitor {
     }
 
     const url = changeInfo.url;
-    console.log(`tab update : TabId: ${tabId}, URL changed to ${url}`);
     this.maybeUpdateSettingListener(tabId, url);
     if (!isSupportedURLProtocol(url)) {
       return;
