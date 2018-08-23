@@ -124,14 +124,13 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   submitTelemetryPing(data) {
     console.log("submitTelemetryPing to server");
     console.log(data);
-    const telOptions = { addEnvironment: true };
+    const telOptions = { addClientId: true, addEnvironment: true };
     return TelemetryController.submitExternalPing("block-autoplay", data, telOptions);
   }
 
   async constructPayload(payloadType) {
     const ping = {
       id: this.pingId++,
-      clientId: await getTelemetryId(),
       branch: this.branch,
     };
     ping.payload = {
