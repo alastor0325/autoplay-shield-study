@@ -124,7 +124,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
   submitTelemetryPing(data) {
     console.log("submitTelemetryPing to server");
     console.log(data);
-    const telOptions = { addClientId: true, addEnvironment: true };
+    const telOptions = { addClientId: true };
     return TelemetryController.submitExternalPing("block-autoplay", data, telOptions);
   }
 
