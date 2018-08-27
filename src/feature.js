@@ -71,12 +71,16 @@ class TabsMonitor {
     }
 
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
-    this.feature.update("promptChanged", {
+    const promptChanged = {
       pageId: hashURL,
       timestamp: Date.now(),
-      rememberCheckbox: permission.rememberCheckbox,
-      allowAutoPlay: permission.allowAutoPlay,
-    });
+      interact: permission.interact,
+    };
+    if (permission.interact === "interact") {
+      promptChanged.rememberCheckbox = permission.rememberCheckbox;
+      promptChanged.allowAutoPlay = permission.allowAutoPlay;
+    }
+    this.feature.update("promptChanged", promptChanged);
   }
 
   async autoplaySettingChanged(data) {

@@ -312,22 +312,57 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
         getAutoplayPermission: async(tabId, url) => {
           function getPromptStatus() {
             return new Promise(function(resolve, reject) {
-              notification.panel.firstChild.onclick = (e) => {
-                const id = e.originalTarget.attributes.anonid.nodeValue;
-                if (id === "checkbox") {
-                  return;
-                }
-                resolve({
-                  rememberCheckbox: notification.panel.firstChild.checkbox.checked,
-                  allowAutoPlay: (id === "button"),
+              // User can have different ways to interact with the prompt, they
+              // can either click a button, hit the ‘escape’ key, or ignore it
+              // and do nothing.
+              const interactPromise = new Promise((resolve) => {
+                panel.firstChild.addEventListener("click", (e) => {
+                  const id = e.originalTarget.attributes.anonid.nodeValue;
+                  if (id === "checkbox") {
+                    return;
+                  }
+                  panel.firstChild.removeEventListener("click", this);
+                  resolve({
+                    interact: "interact",
+                    rememberCheckbox: panel.firstChild.checkbox.checked,
+                    allowAutoPlay: (id === "button"),
+                  });
                 });
-              };
+              });
+
+              const escapePromise = new Promise((resolve) => {
+                tab.ownerGlobal.addEventListener("keypress", (event) => {
+                  if (event.key === "Escape") {
+                    tab.ownerGlobal.removeEventListener("keypress", this);
+                    resolve({
+                      interact: "escape",
+                    });
+                  }
+                });
+              });
+
+              // The `popuphidden` might be dispatched before "keypress" or
+              // "click" event. Therefore, we would wait for a while to check
+              // whether or not we receive those events.
+              panel.addEventListener("popuphidden", () => {
+                // either user clicking one of prompt button or pressing
+                // `escape` key.
+                Promise.race([interactPromise, escapePromise]).then((rv) => {
+                  resolve(rv);
+                });
+
+                tab.ownerGlobal.setTimeout(() => {
+                  resolve({
+                    interact: "ignore",
+                  });
+                }, 300);
+              }, {once: true});
             });
           }
 
-          const notification = tabManager.get(tabId).nativeTab.ownerGlobal.PopupNotifications;
-
-          await _once(notification.panel, "popupshown");
+          const tab = tabManager.get(tabId).nativeTab;
+          const panel = tab.ownerGlobal.PopupNotifications.panel;
+          await _once(panel, "popupshown");
 
           const status = await getPromptStatus().catch(Cu.reportError);
           return status;
