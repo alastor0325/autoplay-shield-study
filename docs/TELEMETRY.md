@@ -74,6 +74,10 @@ The following is the content of the raw payload in the ping.
 
         // timestamp of when page was visited.
         "timestamp": 21231239123121,
+        
+        // How long the prompt shows before users make their response. 
+        // Result is seconds-based.
+        "responseTime", 1.25,
 
         // User can either click a button, hit the
         // ‘escape’ key, or ignore it and do nothing.
