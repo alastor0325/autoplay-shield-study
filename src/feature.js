@@ -73,7 +73,8 @@ class TabsMonitor {
     const permission = await browser.autoplay.getAutoplayPermission(tabId, url);
     const promptChanged = {
       pageId: hashURL,
-      timestamp: Date.now(),
+      timestamp: permission.timestamp,
+      responseTime: permission.responseTime,
       interact: permission.interact,
     };
     if (permission.interact === "interact") {

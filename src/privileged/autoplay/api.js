@@ -363,8 +363,11 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           const tab = tabManager.get(tabId).nativeTab;
           const panel = tab.ownerGlobal.PopupNotifications.panel;
           await _once(panel, "popupshown");
+          const timeStampShow = Date.now();
 
           const status = await getPromptStatus().catch(Cu.reportError);
+          status.timestamp = timeStampShow;
+          status.responseTime = (Date.now() - timeStampShow) / 1000;
           return status;
         },
 
