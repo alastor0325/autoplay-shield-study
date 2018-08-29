@@ -54,11 +54,7 @@ const baseStudySetup = {
       weight: 1,
     },
     {
-      name: "allow-and-notRemember",
-      weight: 1,
-    },
-    {
-      name: "deny-and-notRemember",
+      name: "block",
       weight: 1,
     },
     {
@@ -66,7 +62,7 @@ const baseStudySetup = {
       weight: 1,
     },
     {
-      name: "deny-and-remember",
+      name: "allow-and-notRemember",
       weight: 1,
     },
   ],

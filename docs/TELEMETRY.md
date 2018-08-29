@@ -33,22 +33,21 @@ The following is the content of the raw payload in the ping.
 
   // a label corresponding to which branch profile is in
   // branches are as following, besides "control" branch, other branches have
-  // different default botton and check-boxed actions
-  // 1) "control" (enable autoplay)
-  // 2) "allow-and-notRemember"
-  // 3) "deny-and-notRemember"
-  // 4) "allow-and-remember"
-  // 5) "deny-and-remember"
+  // different default setting or check-boxed actions
+  // 1) "control" (always enable autoplay)
+  // 2) "block" (always block autoplay)
+  // 3) "allow-and-remember"
+  // 4) "allow-and-notRemember"
   "branch": "control",
-  
+
   // contains testing contents
   "payload": {
     // this is identifies what information will be in this blob can be one of
     // 'prompt' or 'settings' or 'counts'. If user is in the 'control' brach,
     // the type would always be 'counts'.
     "type": "prompt",
-  
-    // [optional] 
+
+    // [optional]
     // this is only presented when type == "counts"
     "counters": {
       // this is either total # domains or total pages visited
@@ -64,8 +63,8 @@ The following is the content of the raw payload in the ping.
       // autoplay )
       "totalBlockedVideos": 20,
     },
-     
-    // [optional] 
+
+    // [optional]
     // this is only presented when type == "prompt", this is an array.
     "promptResponse": [
       {
@@ -74,8 +73,8 @@ The following is the content of the raw payload in the ping.
 
         // timestamp of when page was visited.
         "timestamp": 21231239123121,
-        
-        // How long the prompt shows before users make their response. 
+
+        // How long the prompt shows before users make their response.
         // Result is seconds-based.
         "responseTime", 1.25,
 
@@ -85,18 +84,18 @@ The following is the content of the raw payload in the ping.
         // {interact, escape, ignore}
         “interact”: “interact”,
 
-        // [optional] 
+        // [optional]
         // This is only presented when interact == "interact".
         // value of "remember this decision" checkbox
         "rememberCheckbox": true,
 
-        // [optional] 
+        // [optional]
         // This is only presented when interact == "interact".
         // true if user clicked "Allow Autoplay", false if user clicked "Dont Allow".
         "allowAutoPlay": true
       },
     ],
-    
+
     // [optional]
     // this is only presented when type == "settings", this is an array
     // MUST contain either globalSettings or pageSpecific
@@ -105,8 +104,8 @@ The following is the content of the raw payload in the ping.
         // timestamp of when setting was changed.
         "timestamp": 21231239123121,
 
-        // [optional] 
-        // if a global setting was changed. 
+        // [optional]
+        // if a global setting was changed.
         "globalSettings":{
             // the states are “allow”, “block” or “ask”
             "allowAutoPlay": “ask”
@@ -154,7 +153,7 @@ These are the `payload` fields from all pings in the `shield-study` and `block-a
       "totalPagesAM":1,
       "totalBlockedAudibleMedia":1,
     }
-  }  
+  }
 }
 
 2018-08-01T16:29:44.109Z block-autoplay
@@ -168,12 +167,14 @@ These are the `payload` fields from all pings in the `shield-study` and `block-a
         "pageId":109466335,
         "timestamp":1532567717284,
         "interact: "interact",
+        "responseTime", 1.25,
         "rememberCheckbox":false,
         "allowAutoPlay":false,
       },
       {
         "pageId":109466335,
         "timestamp":1532567719834,
+        "responseTime", 3.5,
         "interact: "escape",
       },
     ]

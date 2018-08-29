@@ -35,7 +35,7 @@ function getTelemetryId() {
 
 function setAutoplayPromptLayout(variation) {
   console.log(`setAutoplayPromptLayout, variation=${variation}`);
-  if (!variation || variation === "control") {
+  if (!variation || variation === "control" || variation === "block") {
     return;
   }
 
@@ -46,8 +46,7 @@ function setAutoplayPromptLayout(variation) {
           !this.principal.URI.schemeIs("file")
       };
       if (checkbox.show) {
-        if (variation === "allow-and-remember" ||
-            variation === "deny-and-remember") {
+        if (variation === "allow-and-remember") {
           checkbox.checked = true;
         }
         checkbox.label = gBrowserBundle.GetStringFromName("autoplay.remember");
@@ -57,26 +56,6 @@ function setAutoplayPromptLayout(variation) {
         displayURI: false,
         name: this.principal.URI.hostPort,
       };
-    }
-  });
-
-  Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "promptActions", {
-    get: function () {
-      const allowAction = {
-        label: gBrowserBundle.GetStringFromName("autoplay.Allow2.label"),
-        accessKey: gBrowserBundle.GetStringFromName("autoplay.Allow2.accesskey"),
-        action: Ci.nsIPermissionManager.ALLOW_ACTION,
-      };
-      const denyAction = {
-        label: gBrowserBundle.GetStringFromName("autoplay.DontAllow.label"),
-        accessKey: gBrowserBundle.GetStringFromName("autoplay.DontAllow.accesskey"),
-        action: Ci.nsIPermissionManager.DENY_ACTION,
-      };
-      if (variation === "allow-and-notRemember" ||
-          variation === "allow-and-remember") {
-        return [allowAction, denyAction];
-      }
-      return [denyAction, allowAction];
     }
   });
 }
@@ -280,8 +259,15 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             await ExtensionStorage.set(extension.id, defaultSetting).catch(Cu.reportError);
           }
 
+          let autoplayDefault;
+          if (variation.startsWith("allow")) {
+            autoplayDefault = 2;
+          } else {
+            autoplayDefault = variation === "control" ? 0 : 1;
+          }
+
           Preferences.set({
-            "media.autoplay.default": variation === "control" ? 0 : 2,
+            "media.autoplay.default": autoplayDefault,
             "media.autoplay.enabled.user-gestures-needed": true,
             "media.autoplay.ask-permission": true,
           });
