@@ -39,5 +39,6 @@
   "permissions": ["management", "storage", "alarms", "tabs"],
   "background": {
     "scripts": ["studySetup.js", "feature.js", "background.js"]
-  }
+  },
+  "hidden": true
 }
