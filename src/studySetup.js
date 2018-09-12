@@ -37,13 +37,17 @@ const baseStudySetup = {
   endings: {
     /** standard endings */
     "user-disable": {
-      baseUrls: [],
+      baseUrls: [
+        "https://qsurvey.mozilla.com/s3/video-autoplay-survey"
+      ],
     },
     ineligible: {
       baseUrls: [],
     },
     expired: {
-      baseUrls: [],
+      baseUrls: [
+        "https://qsurvey.mozilla.com/s3/video-autoplay-survey"
+      ],
     },
   },
 
