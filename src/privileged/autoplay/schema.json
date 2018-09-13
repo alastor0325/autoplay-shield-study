@@ -43,6 +43,12 @@
             "description": "the url which is trying to autoplay"
           }
         ]
+      },
+      {
+        "name": "onStudyEnd",
+        "type": "function",
+        "description": "notify when study is ended by Normandy.",
+        "parameters": []
       }
     ],
     "functions": [

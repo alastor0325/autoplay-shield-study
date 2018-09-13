@@ -10,6 +10,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
 
 const CID = ChromeUtils.import("resource://gre/modules/ClientID.jsm", {});
+const { AddonStudies } = ChromeUtils.import("resource://normandy/lib/AddonStudies.jsm", {});
 const { EventManager } = ExtensionCommon;
 
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
@@ -242,6 +243,11 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
           return () => {
             Services.obs.removeObserver(autoplayObs, "AudibleAutoplayMediaOccurred");
           };
+        }).api(),
+
+        onStudyEnd: new EventManager(context, "autoplay.onStudyEnd", fire => {
+          AddonStudies.addUnenrollListener(extension.id, () => fire.sync());
+          return () => {};
         }).api(),
 
         setPreferences: async(variation) => {

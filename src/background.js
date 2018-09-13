@@ -39,6 +39,7 @@ class StudyLifeCycleHandler {
      */
     browser.study.onEndStudy.addListener(this.handleStudyEnding.bind(this));
     browser.study.onReady.addListener(this.enableFeature.bind(this));
+    browser.autoplay.onStudyEnd.addListener(this.handleNormandyEnding.bind(this));
   }
 
   /**
@@ -108,6 +109,11 @@ class StudyLifeCycleHandler {
     // actually remove the addon.
     console.log("About to actually uninstall");
     return browser.management.uninstallSelf();
+  }
+
+  handleNormandyEnding() {
+    console.log(`Study was ended by Normandy.`);
+    browser.study.endStudy("user-disable");
   }
 }
 
