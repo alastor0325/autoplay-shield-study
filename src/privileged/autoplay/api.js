@@ -42,6 +42,8 @@ function setAutoplayPromptLayout(variation) {
 
   Object.defineProperty(PermissionUI.AutoplayPermissionPrompt.prototype, "popupOptions", {
     get: function () {
+      const learnMoreURL =
+        Services.urlFormatter.formatURLPref("app.support.baseURL") + "block-autoplay";
       const checkbox = {
         show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal) &&
           !this.principal.URI.schemeIs("file")
@@ -54,6 +56,7 @@ function setAutoplayPromptLayout(variation) {
       }
       return {
         checkbox,
+        learnMoreURL,
         displayURI: false,
         name: this.principal.URI.hostPort,
       };
