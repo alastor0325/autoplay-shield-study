@@ -52,8 +52,9 @@ class StudyLifeCycleHandler {
    * @returns {undefined}
    */
   async cleanup() {
-    await browser.storage.local.clear();
+    console.info("start clear-up");
     await feature.cleanup();
+    await browser.storage.local.clear();
   }
 
   /**
@@ -99,21 +100,26 @@ class StudyLifeCycleHandler {
     for (const url of ending.urls) {
       await browser.tabs.create({ url });
     }
-    switch (ending.endingName) {
-      // could have different actions depending on positive / ending names
-      default:
-        console.log(`The ending: ${ending.endingName}`);
-        await this.cleanup();
-        break;
-    }
-    // actually remove the addon.
-    console.log("About to actually uninstall");
-    return browser.management.uninstallSelf();
+
+    console.log(`The ending: ${ending.endingName}`);
+    this.uninstall();
   }
 
   handleNormandyEnding() {
     console.log(`Study was ended by Normandy.`);
     browser.study.endStudy("user-disable");
+    this.uninstall();
+  }
+
+  async uninstall() {
+    await this.cleanup();
+
+    console.log("About to actually uninstall");
+    const uninstalling = browser.management.uninstallSelf();
+
+    uninstalling.then(null, (error) => {
+      console.log(`Canceled: ${error}`);
+    });
   }
 }
 

@@ -182,6 +182,7 @@ class Feature {
     // restoring to the default option.
     await browser.autoplay.clearPreferences();
     clearInterval(this.sendPingsScheduler);
+    console.info("finished feature clear-up");
   }
 }
 
