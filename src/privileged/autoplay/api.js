@@ -45,14 +45,16 @@ function setAutoplayPromptLayout(variation) {
       const learnMoreURL =
         Services.urlFormatter.formatURLPref("app.support.baseURL") + "block-autoplay";
       const checkbox = {
-        show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal) &&
-          !this.principal.URI.schemeIs("file")
+        show: !this.principal.URI.schemeIs("file")
       };
+
       if (checkbox.show) {
         if (variation === "allow-and-remember") {
           checkbox.checked = true;
         }
-        checkbox.label = gBrowserBundle.GetStringFromName("autoplay.remember");
+        checkbox.label = PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal) ?
+          gBrowserBundle.GetStringFromName("autoplay.remember-private") :
+          gBrowserBundle.GetStringFromName("autoplay.remember");
       }
       return {
         checkbox,
