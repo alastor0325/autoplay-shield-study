@@ -260,15 +260,20 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
           let cacheDefaultSetting =
             await ExtensionStorage.get(extension.id, "media.autoplay.default").catch(Cu.reportError);
-          if (!cacheDefaultSetting.hasOwnProperty("media.autoplay.default")) {
-            // Save current preferences setting and recover preferences when study ends.
-            const defaultSetting = {
-              "media.autoplay.default" : Preferences.get("media.autoplay.default"),
-              "media.autoplay.enabled.user-gestures-needed": Preferences.get("media.autoplay.enabled.user-gestures-needed"),
-              "media.autoplay.ask-permission": Preferences.get("media.autoplay.ask-permission"),
-            }
-            await ExtensionStorage.set(extension.id, defaultSetting).catch(Cu.reportError);
+
+          // We have already set the preferences, we only need to set preferences
+          // when the first time extension runs.
+          if (cacheDefaultSetting.hasOwnProperty("media.autoplay.default")) {
+            return;
           }
+
+          // Save current preferences setting and recover preferences when study ends.
+          const defaultSetting = {
+            "media.autoplay.default" : Preferences.get("media.autoplay.default"),
+            "media.autoplay.enabled.user-gestures-needed": Preferences.get("media.autoplay.enabled.user-gestures-needed"),
+            "media.autoplay.ask-permission": Preferences.get("media.autoplay.ask-permission"),
+          }
+          await ExtensionStorage.set(extension.id, defaultSetting).catch(Cu.reportError);
 
           let autoplayDefault;
           if (variation.startsWith("allow")) {
@@ -277,6 +282,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             autoplayDefault = variation === "control" ? 0 : 1;
           }
 
+          console.log(`set preferences for '${variation}'`);
           Preferences.set({
             "media.autoplay.default": autoplayDefault,
             "media.autoplay.enabled.user-gestures-needed": true,
@@ -302,6 +308,8 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
               setting[key] = item[key];
             }
           }
+
+          console.log(`reset user's preferences.`)
           Preferences.set(setting);
           setAutoplayPromptLayout("allow-and-remember");
         },
