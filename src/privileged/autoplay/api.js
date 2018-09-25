@@ -1,21 +1,29 @@
 "use strict";
 
-ChromeUtils.import("resource:///modules/PermissionUI.jsm");
-ChromeUtils.import("resource:///modules/SitePermissions.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionStorage.jsm");
-ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
-ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
-
-const CID = ChromeUtils.import("resource://gre/modules/ClientID.jsm", {});
-const { AddonStudies } = ChromeUtils.import("resource://normandy/lib/AddonStudies.jsm", {});
-const { EventManager } = ExtensionCommon;
-
+ChromeUtils.defineModuleGetter(this, "PermissionUI",
+                               "resource:///modules/PermissionUI.jsm");
+ChromeUtils.defineModuleGetter(this, "SitePermissions",
+                               "resource:///modules/SitePermissions.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionCommon",
+                               "resource://gre/modules/ExtensionCommon.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionStorage",
+                               "resource://gre/modules/ExtensionStorage.jsm");
+ChromeUtils.defineModuleGetter(this, "PopupNotifications",
+                               "resource://gre/modules/PopupNotifications.jsm");
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryController",
+                               "resource://gre/modules/TelemetryController.jsm");
+ChromeUtils.defineModuleGetter(this, "CID",
+                               "resource://gre/modules/ClientID.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonStudies",
+                               "resource://normandy/lib/AddonStudies.jsm");
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
+const { EventManager } = ExtensionCommon;
 
 function _once(target, name) {
   const p = new Promise(function(resolve, reject) {
