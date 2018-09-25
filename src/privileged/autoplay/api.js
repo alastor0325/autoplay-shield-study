@@ -26,14 +26,6 @@ function _once(target, name) {
   return p;
 }
 
-function getTelemetryId() {
-  const id = TelemetryController.clientID;
-  if (id === undefined) {
-    return CID.ClientIDImpl._doLoadClientID();
-  }
-  return id;
-}
-
 function setAutoplayPromptLayout(variation) {
   console.log(`setAutoplayPromptLayout, variation=${variation}`);
   if (!variation || variation === "control" || variation === "block") {
