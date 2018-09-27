@@ -178,7 +178,9 @@ class Feature {
    * uninstalled by other means.
    */
   async cleanup() {
-    this.tabsMonitor.clear();
+    if (this.tabsMonitor) {
+      this.tabsMonitor.clear();
+    }
     // restoring to the default option.
     await browser.autoplay.clearPreferences();
     clearInterval(this.sendPingsScheduler);
