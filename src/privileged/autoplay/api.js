@@ -257,6 +257,7 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
 
         setPreferences: async(variation) => {
           this.branch = variation;
+          setAutoplayPromptLayout(variation);
 
           let cacheDefaultSetting =
             await ExtensionStorage.get(extension.id, "media.autoplay.default").catch(Cu.reportError);
@@ -288,7 +289,6 @@ this.autoplay = class AutoplayAPI extends ExtensionAPI {
             "media.autoplay.enabled.user-gestures-needed": true,
             "media.autoplay.ask-permission": true,
           });
-          setAutoplayPromptLayout(variation);
         },
 
         clearPreferences: async() => {
