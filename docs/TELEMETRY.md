@@ -61,7 +61,7 @@ The following is the content of the raw payload in the ping.
       // running total of # of autoplay media blocked (in control group, this
       // means total # of autoplay media which might be blocked if disable
       // autoplay )
-      "totalBlockedVideos": 20,
+      "totalBlockedAudibleMedia": 20,
     },
 
     // [optional]
