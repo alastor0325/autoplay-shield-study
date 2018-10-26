@@ -180,7 +180,7 @@ class Feature {
   async cleanup() {
     this.tabsMonitor.clear();
     // restoring to the default option.
-    browser.autoplay.clearPreferences();
+    await browser.autoplay.clearPreferences();
     clearInterval(this.sendPingsScheduler);
   }
 }
