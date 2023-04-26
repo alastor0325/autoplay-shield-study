@@ -42,10 +42,10 @@
     "npm-run-all": "^4.1.3",
     "nsp": "^3.2.1",
     "prettier": "^1.14.2",
-    "selenium-webdriver": "^3.6.0",
+    "selenium-webdriver": "^4.9.0",
     "sinon": "4.0.0",
     "sinon-chrome": "2.2.1",
-    "web-ext": "^2.9.1",
+    "web-ext": "^7.6.2",
     "yamljs": "^0.3.0"
   },
   "engines": {
